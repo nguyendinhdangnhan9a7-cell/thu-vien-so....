@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FPT BeeLib — Thư viện số CNTT Năm Nhất</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    // Configure Tailwind with custom FPT Polytechnic color palette & animations
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            fpt: {
+              orange: '#F26522',
+              orangeLight: '#FF8547',
+              orangeDark: '#C84B10',
+              blue: '#0066B3',
+              blueLight: '#2B8AE0',
+              blueDark: '#00467C',
+              teal: '#00A896',
+              tealLight: '#28C7B7',
+            }
+          },
+          animation: {
+            'float-slow': 'floatSlow 6s ease-in-out infinite',
+            'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
+            'slide-in': 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'fade-up': 'fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          },
+          keyframes: {
+            floatSlow: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.55' },
+              '50%': { opacity: '1' },
+            },
+            slideIn: {
+              '0%': { opacity: '0', transform: 'translateX(18px) scale(0.99)' },
+              '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+            },
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(14px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar & Glassmorphism utilities */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(242, 101, 34, 0.65);
+    }
+
+    .glass-card {
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .hover-lift {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                  border-color 0.28s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+    }
+
+    /* Particle canvas sits behind content cleanly */
+    #particle-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .app-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Smooth slide stage transition */
+    .slide-enter {
+      animation: slideIn 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes slideIn {
+      0% {
+        opacity: 0;
+        transform: translateX(22px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-fpt-orange/25 selection:text-fpt-orange">
+  <!-- Background Particle Network Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Main Application Shell -->
+  <div id="app" class="app-content min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-30 glass-card bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <!-- Brand Logo -->
+        <button onclick="scrollToTopAndReset()" class="flex items-center gap-3 text-left group focus:outline-none">
+          <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-fpt-orange via-fpt-orangeLight to-fpt-blue flex items-center justify-center shadow-lg shadow-fpt-orange/25 group-hover:scale-105 transition-transform">
+            <!-- Bee / Hex Digital Emblem SVG -->
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L4.5 6.5v11L12 22l7.5-4.5v-11L12 2z" fill="rgba(255,255,255,0.14)" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+              <path d="M12 5v4M12 15v4M6.5 9l3 1.7M14.5 13.3l3 1.7M17.5 9l-3 1.7M9.5 13.3l-3 1.7" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold tracking-tight text-base sm:text-lg bg-gradient-to-r from-fpt-orange via-fpt-blueLight to-fpt-teal bg-clip-text text-transparent">
+                FPT BeeLib
+              </span>
+              <span class="hidden sm:inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-fpt-orange/10 text-fpt-orange border border-fpt-orange/20">
+                CNTT K1
+              </span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+              Thư viện số CNTT Năm Nhất • FPT Polytechnic
+            </p>
+          </div>
+        </button>
+
+        <!-- Center Quick Jump Pills (Desktop) -->
+        <nav aria-label="Điều hướng nhanh bài học" class="hidden xl:flex items-center gap-1">
+          <div id="header-deck-pills" class="flex items-center gap-1"></div>
+        </nav>
+
+        <!-- Right Controls: Study Progress & Theme Toggle -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 text-xs">
+            <span class="inline-block w-2 h-2 rounded-full bg-fpt-teal animate-pulse"></span>
+            <span class="text-slate-600 dark:text-slate-300 font-medium">Tiến độ:</span>
+            <span id="global-progress-text" class="font-mono font-bold text-fpt-orange">0/64 slide</span>
+          </div>
+
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            onclick="toggleTheme()"
+            aria-label="Chuyển đổi chế độ Sáng / Tối"
+            class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-amber-300 transition-all shadow-sm active:scale-95"
+          >
+            <!-- Sun Icon (shown in dark mode) -->
+            <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" stroke-linecap="round" />
+            </svg>
+            <!-- Moon Icon (shown in light mode) -->
+            <svg id="moon-icon" class="w-5 h-5 block dark:hidden text-fpt-blue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Banner & Search / Filter Toolbar -->
+    <section class="pt-8 pb-6 sm:pt-12 sm:pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <div class="glass-card rounded-3xl p-6 sm:p-8 lg:p-10 bg-white/75 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-slate-900/5 dark:shadow-black/30 relative overflow-hidden">
+        <!-- Decorative Ambient Gradient Orbs -->
+        <div class=" -top-24 -right-24 w-72 h-72 rounded-full bg-fpt-orange/15 blur-3xl absolute pointer-events-none"></div>
+        <div class=" -bottom-24 -left-24 w-72 h-72 rounded-full bg-fpt-blue/15 dark:bg-fpt-teal/15 blur-3xl absolute pointer-events-none"></div>
+
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+          <div class="lg:col-span-8 space-y-4">
+            <div class="inline-flex flex-wrap items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-fpt-orange/15 via-fpt-blue/15 to-fpt-teal/15 border border-fpt-orange/25 text-xs font-semibold text-fpt-orange dark:text-fpt-orangeLight">
+              <span>🐝 FPT Polytechnic • Khối Ngành Công nghệ Thông tin</span>
+              <span class="text-slate-400">•</span>
+              <span class="font-mono text-fpt-blue dark:text-fpt-tealLight">8 File Deck • 64 Slide Tương Tác</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-4xl lg:text-[2.65rem] font-extrabold tracking-tight leading-tight">
+              <span class="bg-gradient-to-r from-fpt-orange via-fpt-blue to-fpt-teal dark:from-fpt-orangeLight dark:via-fpt-blueLight dark:to-fpt-tealLight bg-clip-text text-transparent">
+                FPT BeeLib
+              </span>
+              <span class="block sm:inline text-slate-900 dark:text-white">
+                — Thư viện số CNTT Năm Nhất
+              </span>
+            </h1>
+
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+              Kho học liệu số hóa toàn diện dành cho tân sinh viên ngành CNTT FPT Polytechnic. Mỗi bài học là một file <code class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-xs sm:text-sm text-fpt-orange font-semibold">.deck</code> gồm <strong>8 slide chuyên sâu</strong> (tổng 64 slide), hỗ trợ nhảy mục lục trực tiếp, phím mũi tên trái/phải và xuất ghi chú <code class="font-mono text-xs text-fpt-teal">.md</code> cá nhân.
+            </p>
+          </div>
+
+          <!-- Quick Stats Card -->
+          <div class="lg:col-span-4 grid grid-cols-2 gap-3">
+            <div class="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70">
+              <div class="text-2xl sm:text-3xl font-extrabold text-fpt-orange font-mono">08</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">File bài học (.deck)</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70">
+              <div class="text-2xl sm:text-3xl font-extrabold text-fpt-blue dark:text-fpt-blueLight font-mono">64</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Slide & Câu hỏi ôn tập</div>
+            </div>
+            <div class="col-span-2 p-3.5 rounded-2xl bg-gradient-to-r from-fpt-orange/10 via-fpt-blue/10 to-fpt-teal/10 border border-fpt-teal/25 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold text-slate-700 dark:text-slate-200">Slide đã xem</div>
+                <div id="hero-progress-label" class="text-xs text-slate-500 dark:text-slate-400">0 / 64 slide hoàn tất</div>
+              </div>
+              <div class="text-right">
+                <span id="hero-progress-percent" class="text-lg font-extrabold font-mono text-fpt-teal">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search & Topic Filter Controls -->
+        <div class="relative z-10 mt-7 pt-6 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+          <!-- Search Input -->
+          <div class="relative flex-1 max-w-xl">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
+            </svg>
+            <input
+              id="search-input"
+              type="text"
+              oninput="handleSearchOrFilter()"
+              placeholder="Tìm bài học, file .deck, mục lục, khái niệm (VD: Moore, Docker, CIA, Prompt...)"
+              class="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-fpt-orange/50 focus:border-fpt-orange transition"
+            />
+            <button
+              id="clear-search-btn"
+              type="button"
+              onclick="clearSearch()"
+              title="Xóa từ khóa"
+              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Topic Filter Pills -->
+          <div id="topic-filter-bar" class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Overview Table of Contents (Mục lục tổng quan 8 bài & jump links) -->
+    <section class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full mb-6">
+      <div class="glass-card rounded-2xl p-4 sm:p-5 bg-white/70 dark:bg-slate-900/65 border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-5 rounded-full bg-gradient-to-b from-fpt-orange to-fpt-teal"></span>
+            <h2 class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+              Mục lục tổng quan 8 file bài học (Nhấp để mở Slide hoặc cuộn tới bài)
+            </h2>
+          </div>
+          <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">Slide 01 → Slide 08</span>
+        </div>
+
+        <div id="overview-toc-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Main 8 Lessons Grid -->
+    <main class="flex-1 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full pb-14">
+      <div id="lessons-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- Empty Search State -->
+      <div id="empty-state" class="hidden glass-card rounded-3xl p-10 text-center bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 mt-4">
+        <div class="text-4xl mb-3">🔍</div>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Không tìm thấy bài học hoặc mục lục phù hợp</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+          Hãy thử từ khóa khác như <span class="font-mono text-fpt-orange">CĐS</span>, <span class="font-mono text-fpt-orange">CPU</span>, <span class="font-mono text-fpt-orange">Docker</span>, <span class="font-mono text-fpt-orange">NIST</span>, <span class="font-mono text-fpt-orange">IoT</span>, <span class="font-mono text-fpt-orange">RPA</span>, <span class="font-mono text-fpt-orange">Prompt</span> hoặc <span class="font-mono text-fpt-orange">CIA</span>.
+        </p>
+        <button
+          type="button"
+          onclick="resetFilters()"
+          class="mt-5 px-5 py-2.5 rounded-xl bg-fpt-orange hover:bg-fpt-orangeDark text-white text-sm font-semibold shadow-md shadow-fpt-orange/25 transition"
+        >
+          Hiển thị toàn bộ 8 bài học
+        </button>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-card bg-white/80 dark:bg-slate-900/85 border-t border-slate-200/80 dark:border-slate-800/80 py-6 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-fpt-orange">FPT BeeLib</span>
+          <span>•</span>
+          <span>Thư viện số CNTT Năm Nhất — FPT Polytechnic</span>
+        </div>
+        <div class="font-mono text-xs text-slate-400 dark:text-slate-500">
+          Phím tắt trong trình xem: ← / → chuyển slide • Esc đóng
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE VIEWER MODAL (Trình xem slide chi tiết + Mục lục + Ghi chú)    -->
+  <!-- ===================================================================== -->
+  <div
+    id="slide-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center p-2 sm:p-4 lg:p-6 bg-slate-950/75 backdrop-blur-md"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-lesson-title"
+  >
+    <div class="w-full max-w-6xl h-[94vh] sm:h-[90vh] rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="px-4 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/95 flex items-center justify-between gap-3 shrink-0">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="modal-deck-badge" class="px-2.5 py-0.5 rounded-lg font-mono text-xs font-semibold bg-fpt-orange/15 text-fpt-orange border border-fpt-orange/30">
+              slide-01-cmcn-cntt-cds.deck
+            </span>
+            <span id="modal-topic-badge" class="text-xs font-medium text-fpt-blue dark:text-fpt-tealLight">
+              Chủ đề
+            </span>
+          </div>
+          <h2 id="modal-lesson-title" class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white truncate mt-1">
+            Tên bài học
+          </h2>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Toggle TOC Drawer on Mobile/Tablet -->
+          <button
+            type="button"
+            onclick="toggleMobileToc()"
+            class="lg:hidden px-3 py-2 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300/70 dark:hover:bg-slate-700 transition"
+          >
+            Mục lục
+          </button>
+
+          <!-- Export Markdown Notes Button -->
+          <button
+            type="button"
+            onclick="exportCurrentDeckMarkdown()"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-fpt-teal/15 hover:bg-fpt-teal/25 text-fpt-teal border border-fpt-teal/30 text-xs font-semibold transition active:scale-95"
+            title="Tải xuống / sao chép ghi chú tóm tắt .md của bài học này"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="hidden sm:inline">Xuất .MD</span>
+          </button>
+
+          <!-- Close Button -->
+          <button
+            type="button"
+            onclick="closeSlideModal()"
+            aria-label="Đóng trình xem slide"
+            class="p-2 rounded-xl bg-slate-200/70 hover:bg-rose-500 hover:text-white dark:bg-slate-800 dark:hover:bg-rose-600 text-slate-600 dark:text-slate-300 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body: Left TOC Sidebar + Right Slide Stage -->
+      <div class="flex-1 flex min-h-0 overflow-hidden relative">
+
+        <!-- Left Sidebar: Slide Table of Contents (8 Slides) -->
+        <aside
+          id="modal-toc-sidebar"
+          class="hidden lg:flex lg:w-80 xl:w-88 flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 overflow-y-auto shrink-0 p-3.5"
+        >
+          <div class="flex items-center justify-between px-2 pb-2.5 mb-2 border-b border-slate-200/80 dark:border-slate-800">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Mục lục bài học (8 Slide)
+            </span>
+            <span id="modal-toc-progress" class="font-mono text-xs font-semibold text-fpt-teal">0/8</span>
+          </div>
+
+          <div id="modal-toc-list" class="space-y-1.5">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </aside>
+
+        <!-- Right Main Slide Stage -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50 via-white to-fpt-blue/5 dark:from-slate-950 dark:via-slate-900 dark:to-fpt-blue/10">
+
+          <!-- Slide Indicator Strip -->
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="flex items-center gap-2">
+              <span id="slide-number-pill" class="px-3 py-1 rounded-full bg-fpt-blue text-white font-mono text-xs font-bold shadow-sm">
+                Slide 01 / 08
+              </span>
+              <span id="slide-toc-tag" class="px-2.5 py-1 rounded-full bg-fpt-orange/10 text-fpt-orange border border-fpt-orange/25 text-xs font-semibold">
+                Thẻ mục lục
+              </span>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <span id="slide-visited-badge" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                ✓ Đã xem
+              </span>
+            </div>
+          </div>
+
+          <!-- Animated Slide Content Container -->
+          <article id="slide-stage" class="slide-enter flex-1 flex flex-col gap-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-7 shadow-lg">
+            <!-- Slide Title -->
+            <h3 id="slide-title" class="text-xl sm:text-2xl lg:text-[1.7rem] font-extrabold text-slate-900 dark:text-white leading-snug">
+              Tiêu đề slide
+            </h3>
+
+            <!-- Detailed Content -->
+            <div id="slide-content" class="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
+              Nội dung chi tiết
+            </div>
+
+            <!-- FPT Polytechnic IT Freshman Highlight & Practical Example -->
+            <div class="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-fpt-orange/10 via-amber-500/5 to-fpt-blue/10 dark:from-fpt-orange/15 dark:to-fpt-blue/15 border border-fpt-orange/25">
+              <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-fpt-orange dark:text-fpt-orangeLight mb-1.5">
+                <span>🐝 Điểm nhấn & Ví dụ thực tế — Sinh viên CNTT FPT</span>
+              </div>
+              <p id="slide-highlight" class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                Điểm nhấn thực tế
+              </p>
+            </div>
+
+            <!-- Review Question & Personal Note Box -->
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 pt-1">
+              <div class="xl:col-span-6 rounded-2xl p-4 bg-fpt-teal/10 dark:bg-fpt-teal/15 border border-fpt-teal/25">
+                <div class="text-xs font-bold uppercase tracking-wider text-fpt-teal dark:text-fpt-tealLight mb-1">
+                  💡 Câu hỏi ôn tập nhanh
+                </div>
+                <p id="slide-question" class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                  Câu hỏi ôn tập
+                </p>
+              </div>
+
+              <div class="xl:col-span-6 rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label for="slide-personal-note" class="text-xs font-bold uppercase tracking-wider text-fpt-blue dark:text-fpt-blueLight">
+                    ✍️ Ghi chú cá nhân của bạn (tự lưu)
+                  </label>
+                  <span id="note-saved-indicator" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium opacity-0 transition-opacity">
+                    Đã lưu
+                  </span>
+                </div>
+                <textarea
+                  id="slide-personal-note"
+                  rows="2"
+                  oninput="savePersonalNote()"
+                  placeholder="Ghi lại ý quan trọng, ví dụ code hoặc câu hỏi cho giảng viên..."
+                  class="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-fpt-blue/40 resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </article>
+
+          <!-- Bottom Slide Navigation Controls -->
+          <div class="mt-4 pt-3 flex items-center justify-between gap-3 shrink-0">
+            <button
+              id="prev-slide-btn"
+              type="button"
+              onclick="prevSlide()"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs sm:text-sm font-semibold transition disabled:opacity-40 disabled:pointer-events-none active:scale-95"
+            >
+              <span>←</span>
+              <span>Slide trước</span>
+            </button>
+
+            <!-- Mini Dot Stepper -->
+            <div id="slide-dots" class="hidden sm:flex items-center gap-1.5">
+              <!-- Populated dynamically via JS -->
+            </div>
+
+            <button
+              id="next-slide-btn"
+              type="button"
+              onclick="nextSlide()"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-fpt-orange to-fpt-orangeLight hover:from-fpt-orangeDark hover:to-fpt-orange text-white text-xs sm:text-sm font-semibold shadow-md shadow-fpt-orange/25 transition disabled:opacity-40 disabled:pointer-events-none active:scale-95"
+            >
+              <span>Slide tiếp</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast / Message Box Notification (Never uses alert()) -->
+  <div
+    id="toast-banner"
+    class="fixed bottom-5 right-5 z-[60] hidden items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xl border border-slate-700/50 dark:border-slate-200 text-xs sm:text-sm font-medium max-w-sm"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-fpt-teal shrink-0"></span>
+    <span id="toast-message">Thông báo</span>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION DATA & LOGIC (8 Deck Files x 8 Slides = 64 Slides)      -->
+  <!-- ===================================================================== -->
+  <script>
+    // Storage keys for localStorage persistence
+    const STORAGE_KEYS = {
+      THEME: 'fpt_beelib_theme_v1',
+      VISITED: 'fpt_beelib_visited_slides_v1',
+      NOTES: 'fpt_beelib_personal_notes_v1',
+    };
+
+    // Topic categories for filtering
+    const TOPICS = [
+      { id: 'ALL', label: 'Tất cả (8 bài)' },
+      { id: 'CDS_SO', label: 'CMCN 4.0 & CĐS' },
+      { id: 'HARDWARE_OS', label: 'Phần cứng & Hệ điều hành' },
+      { id: 'CLOUD_NET', label: 'Phần mềm, Cloud & Mạng' },
+      { id: 'THINKING_AI', label: 'Tư duy & AI/Dữ liệu' },
+      { id: 'SECURITY_ETHICS', label: 'ATTT & Đạo đức số' },
+    ];
+
+    /**
+     * Complete curriculum data: 8 Lessons (slide-01 ... slide-08)
+     * Each lesson has strictly 8 slides (total = 64 unique slides).
+     */
+    const LESSONS_DATA = [
+      {
+        id: 'bai-01',
+        order: '01',
+        fileName: 'slide-01-cmcn-cntt-cds.deck',
+        topicId: 'CDS_SO',
+        topicLabel: 'CMCN 4.0 & Chuyển đổi số',
+        accent: 'from-fpt-orange to-amber-500',
+        title: 'Tổng quan về CMCN 4.0, CNTT 4.0 & Chuyển đổi số (CĐS)',
+        summary: 'Khám phá tiến trình 4 cuộc Cách mạng Công nghiệp, trụ cột CNTT 4.0, phân biệt Tin học hóa với Chuyển đổi số, 3 trụ cột quốc gia số, SDGs của UNIDO và năng lực cần có của sinh viên CNTT.',
+        slides: [
+          {
+            num: 1,
+            toc: '4 cuộc CMCN (1.0 – 4.0)',
+            title: 'Bức tranh 4 cuộc Cách mạng Công nghiệp từ 1.0 đến 4.0',
+            content: [
+              '<strong>CMCN 1.0 (cuối TK XVIII):</strong> Cơ giới hóa nhờ năng lượng nước và hơi nước, thay thế sức cơ bắp thủ công trong dệt may, luyện kim và giao thông đường sắt.',
+              '<strong>CMCN 2.0 (cuối TK XIX – đầu TK XX):</strong> Điện khí hóa, sản xuất dây chuyền hàng loạt và động cơ đốt trong, tiêu biểu là tư duy dây chuyền lắp ráp hiện đại.',
+              '<strong>CMCN 3.0 (từ thập niên 1970):</strong> Tự động hóa bằng điện tử, bán dẫn, máy tính cá nhân và mạng viễn thông sơ khai.',
+              '<strong>CMCN 4.0:</strong> Tích hợp thế giới thực, ảo và sinh học qua hệ thống không gian mạng (CPS), dữ liệu lớn và trí tuệ thông minh tự thích nghi.'
+            ],
+            highlight: 'Khi học lập trình tại FPT Polytechnic, bạn không chỉ viết lệnh cho một máy đơn lẻ mà đang tạo ra các dịch vụ kết nối vào hệ sinh thái số toàn cầu của CMCN 4.0.',
+            question: 'Điểm khác biệt cốt lõi giữa tự động hóa của CMCN 3.0 và hệ thống thông minh của CMCN 4.0 là gì?'
+          },
+          {
+            num: 2,
+            toc: 'CNTT 4.0 & Bộ tứ trụ cột',
+            title: 'CNTT 4.0 và bộ tứ công nghệ AI, IoT, Big Data, Cloud',
+            content: [
+              '<strong>CNTT 4.0</strong> chuyển trọng tâm từ quản trị hồ sơ nội bộ sang kiến trúc số phân tán, thời gian thực, hướng dịch vụ và có khả năng tự học.',
+              '<strong>IoT (Internet of Things):</strong> Cảm biến và thiết bị thông minh thu thập dữ liệu vật lý liên tục.',
+              '<strong>Big Data:</strong> Khối dữ liệu khổng lồ, đa cấu trúc, tốc độ cao cần kỹ thuật lưu trữ và xử lý phân tán.',
+              '<strong>Cloud Computing & AI:</strong> Đám mây cung cấp hạ tầng co giãn linh hoạt, còn AI phân tích dữ liệu để dự đoán và ra quyết định.'
+            ],
+            highlight: 'Một ứng dụng quản lý điểm danh thông minh dùng camera AI (AI), đẩy log lên máy chủ đám mây (Cloud) từ cảm biến cửa (IoT) lưu trữ lịch sử lớn (Big Data) chính là mô hình thu nhỏ của CNTT 4.0.',
+            question: 'Tại sao AI, IoT, Big Data và Cloud thường vận hành bổ trợ cho nhau thay vì tách rời?'
+          },
+          {
+            num: 3,
+            toc: 'CĐS vs Tin học hóa',
+            title: 'Phân biệt Chuyển đổi số (CĐS), Số hóa và Tin học hóa',
+            content: [
+              '<strong>Số hóa dữ liệu (Digitization):</strong> Chuyển thông tin tương tự (giấy tờ, âm thanh vật lý) sang dạng nhị phân số (PDF, ảnh, bản ghi database).',
+              '<strong>Tin học hóa / Ứng dụng CNTT (Digitalization):</strong> Dùng phần mềm để tin học hóa quy trình hiện có (ví dụ: nhập điểm lên bảng tính hoặc phần mềm kế toán cũ) nhưng mô hình vận hành ít thay đổi.',
+              '<strong>Chuyển đổi số (Digital Transformation):</strong> Tái cấu trúc mô hình hoạt động, quy trình, văn hóa và trải nghiệm người dùng dựa trên dữ liệu và công nghệ số để tạo giá trị mới.'
+            ],
+            highlight: 'Quét đề thi giấy thành file PDF là số hóa; đưa điểm lên phần mềm quản lý là tin học hóa; xây dựng nền tảng học tập thích ứng cá nhân hóa theo lộ trình từng sinh viên là chuyển đổi số.',
+            question: 'Vì sao mua phần mềm mới nhưng giữ nguyên quy trình thủ công rườm rà chưa thể gọi là Chuyển đổi số?'
+          },
+          {
+            num: 4,
+            toc: 'Chính phủ số • Kinh tế số • Xã hội số',
+            title: 'Ba trụ cột chuyển đổi số quốc gia: Chính phủ số, Kinh tế số, Xã hội số',
+            content: [
+              '<strong>Chính phủ số:</strong> Cung cấp dịch vụ công trực tuyến minh bạch, liên thông dữ liệu, giảm giấy tờ và tăng tương tác hai chiều với người dân, doanh nghiệp.',
+              '<strong>Kinh tế số:</strong> Dữ liệu là yếu tố sản xuất mới; thúc đẩy thương mại điện tử, thanh toán không tiền mặt, kinh tế nền tảng và doanh nghiệp số.',
+              '<strong>Xã hội số:</strong> Công dân số có kỹ năng số, tiếp cận bình đẳng dịch vụ y tế số, giáo dục số, văn hóa số và an toàn trực tuyến.'
+            ],
+            highlight: 'Từ nộp hồ sơ trực tuyến, quét mã QR thanh toán học phí đến tham gia lớp học trực tuyến đều phản ánh sự giao thoa giữa Chính phủ số, Kinh tế số và Xã hội số.',
+            question: 'Hãy nêu một ví dụ thực tế cho thấy Kinh tế số và Xã hội số tác động qua lại trong đời sống sinh viên.'
+          },
+          {
+            num: 5,
+            toc: 'SDGs theo UNIDO',
+            title: 'Phát triển bền vững (SDGs) dưới góc nhìn UNIDO và công nghệ',
+            content: [
+              '<strong>UNIDO</strong> (Tổ chức Phát triển Công nghiệp Liên Hợp Quốc) nhấn mạnh công nghiệp hóa bao trùm và bền vững gắn với 17 Mục tiêu Phát triển Bền vững (SDGs).',
+              'Công nghệ số giúp tối ưu năng lượng, giảm rác thải điện tử, nâng cao năng suất lao động và mở rộng cơ hội tiếp cận giáo dục, việc làm chất lượng.',
+              'Phát triển bền vững đòi hỏi cân bằng 3 khía cạnh: <strong>Kinh tế</strong>, <strong>Xã hội</strong> và <strong>Môi trường</strong>.'
+            ],
+            highlight: 'Khi tối ưu thuật toán hoặc giảm truy vấn dư thừa trên hệ thống web, lập trình viên cũng góp phần tiết kiệm điện năng trung tâm dữ liệu — một đóng góp thiết thực cho phát triển xanh.',
+            question: 'Công nghệ thông tin có thể hỗ trợ mục tiêu giáo dục chất lượng và giảm phát thải như thế nào?'
+          },
+          {
+            num: 6,
+            toc: 'Tác động nghề nghiệp & xã hội',
+            title: 'Biến đổi thị trường lao động và cấu trúc nghề nghiệp trong kỷ nguyên số',
+            content: [
+              'Nhiều tác vụ lặp lại mang tính quy chuẩn cao dần được tự động hóa hoặc hỗ trợ bởi công cụ thông minh.',
+              'Nhu cầu tăng mạnh ở các vai trò thiết kế kiến trúc hệ thống, phân tích dữ liệu, bảo mật thông tin, quản trị sản phẩm số và tích hợp AI.',
+              'Mô hình làm việc linh hoạt (hybrid, từ xa, hợp tác đa ngành) yêu cầu kỹ năng tự học và giao tiếp kỹ thuật rõ ràng.'
+            ],
+            highlight: 'Sinh viên CNTT không cạnh tranh với công cụ tự động hóa bằng việc gõ code máy móc, mà tạo lợi thế bằng tư duy giải quyết bài toán và làm chủ công cụ.',
+            question: 'Những nhóm công việc nào có xu hướng mở rộng khi doanh nghiệp đẩy mạnh chuyển đổi số?'
+          },
+          {
+            num: 7,
+            toc: 'Kỹ năng sinh viên CNTT',
+            title: 'Bộ năng lực cốt lõi của sinh viên CNTT năm nhất',
+            content: [
+              '<strong>Nền tảng kỹ thuật vững:</strong> Hiểu phần cứng, hệ điều hành, mạng, dữ liệu, tư duy thuật toán và an toàn thông tin.',
+              '<strong>Tư duy thực hành ("Làm thật - Học thật"):</strong> Biết chia nhỏ bài toán, đọc tài liệu chính thống, kiểm thử và sửa lỗi kiên trì.',
+              '<strong>Kỹ năng mềm & đạo đức:</strong> Làm việc nhóm, quản lý thời gian, trình bày thuyết phục và tôn trọng bản quyền, quyền riêng tư.'
+            ],
+            highlight: 'Tại FPT Polytechnic, thực hành dự án sớm ngay từ năm nhất giúp bạn rèn phản xạ kỹ sư qua từng bài lab và workshop.',
+            question: 'Bạn cần ưu tiên rèn luyện thói quen học tập nào ngay trong học kỳ đầu tiên tại FPT Polytechnic?'
+          },
+          {
+            num: 8,
+            toc: 'Lộ trình & Tổng kết Bài 01',
+            title: 'Tổng kết: Từ bối cảnh CMCN 4.0 đến hành trang người làm CNTT',
+            content: [
+              'CMCN 4.0 và CNTT 4.0 đặt dữ liệu, kết nối và trí tuệ số vào trung tâm mọi hoạt động.',
+              'Chuyển đổi số là quá trình đổi mới cách thức vận hành và tạo giá trị, không chỉ là mua sắm thiết bị.',
+              'Ba trụ cột Chính phủ số – Kinh tế số – Xã hội số và định hướng SDGs định hình bối cảnh nghề nghiệp lâu dài của bạn.'
+            ],
+            highlight: 'Hãy lưu lại các khái niệm nền tảng của Bài 01 làm kim chỉ nam khi bước sang tìm hiểu phần cứng, hệ điều hành và đám mây ở các bài tiếp theo.',
+            question: 'Tóm tắt ngắn gọn mối liên hệ giữa CĐS, CNTT 4.0 và vai trò của một kỹ sư/kỹ thuật viên CNTT tương lai.'
+          }
+        ]
+      },
+      {
+        id: 'bai-02',
+        order: '02',
+        fileName: 'slide-02-computer-hardware.deck',
+        topicId: 'HARDWARE_OS',
+        topicLabel: 'Phần cứng & Hệ điều hành',
+        accent: 'from-fpt-blue to-cyan-500',
+        title: 'Kiến trúc & Phần cứng máy tính',
+        summary: 'Theo dõi 5 thế hệ máy tính, phân loại thiết bị, chu trình I-P-O-S, vai trò CPU/RAM/ROM/lưu trữ/ngoại vi, Định luật Moore, đa nhân, DSA/TPU/lượng tử và cách chọn máy cho sinh viên CNTT.',
+        slides: [
+          {
+            num: 1,
+            toc: '5 thế hệ máy tính',
+            title: 'Lịch sử phát triển qua 5 thế hệ máy tính',
+            content: [
+              '<strong>Thế hệ 1 (1940s–1950s):</strong> Đèn chân không, kích thước cồng kềnh, tỏa nhiệt lớn, lập trình bằng ngôn ngữ máy/hợp ngữ.',
+              '<strong>Thế hệ 2 (1950s–1960s):</strong> Bóng bán dẫn (Transistor) nhỏ gọn, bền bỉ và tiết kiệm điện hơn.',
+              '<strong>Thế hệ 3 (1960s–1970s):</strong> Mạch tích hợp (IC) đưa nhiều linh kiện lên một chip, xuất hiện hệ điều hành đa nhiệm.',
+              '<strong>Thế hệ 4 (1971–nay):</strong> Vi xử lý tích hợp mật độ rất cao (VLSI/ULSI), máy tính cá nhân và mạng phát triển bùng nổ.',
+              '<strong>Thế hệ 5:</strong> Hướng tới xử lý song song quy mô lớn, tăng tốc AI, điện toán đám mây và nghiên cứu điện toán lượng tử.'
+            ],
+            highlight: 'Chiếc laptop bạn dùng gõ code hôm nay kế thừa hàng thập kỷ thu nhỏ linh kiện từ đèn chân không sang bóng bán dẫn và vi mạch siêu tích hợp.',
+            question: 'Bước đột phá nào giúp máy tính thu nhỏ kích thước và tăng độ tin cậy mạnh mẽ từ thế hệ 1 sang thế hệ 2?'
+          },
+          {
+            num: 2,
+            toc: 'Phân loại thiết bị máy tính',
+            title: 'Phân loại thiết bị tính toán trong thực tế',
+            content: [
+              '<strong>Siêu máy tính & Máy chủ (Server):</strong> Xử lý tính toán khoa học nặng, mô phỏng hoặc phục vụ hàng nghìn yêu cầu đồng thời.',
+              '<strong>Máy tính cá nhân (Desktop, Laptop, Workstation):</strong> Phục vụ học tập, lập trình, thiết kế và tác vụ văn phòng.',
+              '<strong>Thiết bị di động & Nhúng (Smartphone, Tablet, Vi điều khiển):</strong> Gọn nhẹ, pin tối ưu, điều khiển thiết bị chuyên dụng.'
+            ],
+            highlight: 'Workstation hoặc laptop lập trình phù hợp để chạy IDE, máy ảo và Docker cục bộ; còn khi huấn luyện mô hình lớn hoặc triển khai web, ta đẩy tải lên máy chủ/đám mây.',
+            question: 'Khi nào nên dùng máy tính cá nhân cục bộ và khi nào nên chuyển tải sang máy chủ từ xa?'
+          },
+          {
+            num: 3,
+            toc: 'Chu trình I-P-O-S',
+            title: 'Chu trình xử lý dữ liệu Input – Process – Output – Storage',
+            content: [
+              '<strong>Input (Nhập):</strong> Tiếp nhận dữ liệu và lệnh từ bàn phím, chuột, micro, cảm biến hoặc mạng.',
+              '<strong>Process (Xử lý):</strong> CPU thực thi lệnh, tính toán số học/logic và điều phối luồng dữ liệu.',
+              '<strong>Output (Xuất):</strong> Hiển thị kết quả qua màn hình, âm thanh, máy in hoặc phản hồi qua mạng.',
+              '<strong>Storage (Lưu trữ):</strong> Giữ dữ liệu tạm thời (bộ nhớ làm việc) hoặc lâu dài (ổ cứng/SSD) để tái sử dụng.'
+            ],
+            highlight: 'Khi bạn bấm nút Run một chương trình: mã nguồn là Input, CPU biên dịch/thực thi là Process, kết quả in ra console là Output và file lưu trên ổ cứng là Storage.',
+            question: 'Nếu thiếu thành phần Storage trong chu trình I-P-O-S, hệ thống máy tính sẽ gặp hạn chế gì?'
+          },
+          {
+            num: 4,
+            toc: 'CPU, RAM, ROM & Lưu trữ',
+            title: 'Giải phẫu linh kiện cốt lõi: CPU, RAM, ROM và Bộ nhớ lưu trữ',
+            content: [
+              '<strong>CPU (CU + ALU + Registers):</strong> Đơn vị điều khiển, tính toán số học/logic và thanh ghi tốc độ cực cao.',
+              '<strong>RAM:</strong> Bộ nhớ khả biến (mất dữ liệu khi tắt nguồn), lưu chương trình và dữ liệu đang hoạt động để CPU truy xuất nhanh.',
+              '<strong>ROM / Firmware:</strong> Bộ nhớ không khả biến chứa chương trình khởi động cơ bản (BIOS/UEFI) của bo mạch.',
+              '<strong>Lưu trữ thứ cấp (SSD NVMe, HDD):</strong> Lưu hệ điều hành, mã nguồn, cơ sở dữ liệu lâu dài; SSD NVMe nhanh vượt trội nhờ giao tiếp PCIe.'
+            ],
+            highlight: 'Mở nhiều tab trình duyệt + Docker + IDE làm đầy RAM sẽ khiến máy phải hoán đổi dữ liệu sang ổ lưu trữ (swap), làm hệ thống chậm hẳn.',
+            question: 'Sự khác biệt cơ bản giữa RAM và SSD về tính lưu giữ dữ liệu và tốc độ truy cập là gì?'
+          },
+          {
+            num: 5,
+            toc: 'Thiết bị ngoại vi & Kết nối',
+            title: 'Thiết bị ngoại vi và chuẩn kết nối hiện đại',
+            content: [
+              'Thiết bị ngoại vi mở rộng khả năng nhập/xuất: màn hình tần số quét cao, bàn phím cơ, chuột, webcam, tai nghe, dock mở rộng.',
+              'Chuẩn kết nối phổ biến: <strong>USB / Thunderbolt</strong> (truyền dữ liệu, xuất hình, sạc PD), <strong>HDMI / DisplayPort</strong> (hình ảnh độ phân giải cao), <strong>PCIe</strong> (kết nối SSD, GPU, card mở rộng).'
+            ],
+            highlight: 'Một cổng USB-C hỗ trợ Thunderbolt hoặc DisplayPort Alt Mode giúp một dây cáp vừa sạc laptop vừa xuất ra màn hình ngoài.',
+            question: 'Cần kiểm tra thông số gì trên cổng USB-C trước khi mua cáp xuất hình ảnh ra màn hình rời?'
+          },
+          {
+            num: 6,
+            toc: 'Định luật Moore & Multicore',
+            title: 'Định luật Moore, giới hạn xung nhịp và kiến trúc Đa nhân (Multicore)',
+            content: [
+              '<strong>Định luật Moore:</strong> Số lượng bóng bán dẫn trên vi mạch có xu hướng tăng gấp đôi sau khoảng chu kỳ ~18–24 tháng, thúc đẩy hiệu năng và chi phí tính toán.',
+              'Khi tăng xung nhịp đơn nhân gặp rào cản nhiệt độ và rò rỉ điện năng, ngành phần cứng chuyển mạnh sang <strong>đa nhân (Multi-core)</strong> và đa luồng.',
+              'Để tận dụng CPU đa nhân, phần mềm cần thiết kế xử lý song song hoặc bất đồng bộ hợp lý.'
+            ],
+            highlight: 'CPU có 8 nhân 16 luồng giúp biên dịch mã, nén file hoặc chạy nhiều tiến trình nền mượt mà hơn nếu ứng dụng biết chia tải.',
+            question: 'Vì sao CPU hiện đại tập trung tăng số nhân thay vì chỉ đẩy xung nhịp đơn nhân lên thật cao?'
+          },
+          {
+            num: 7,
+            toc: 'DSA, TPU & Lượng tử',
+            title: 'Bộ tăng tốc chuyên dụng (DSA, TPU) và xu hướng Điện toán lượng tử',
+            content: [
+              '<strong>DSA (Domain-Specific Architecture) & TPU:</strong> Kiến trúc chuyên biệt cho từng miền tác vụ (như phép nhân ma trận trong AI/Deep Learning), đạt hiệu năng/watt vượt trội so với CPU đa dụng.',
+              '<strong>GPU:</strong> Hàng nghìn nhân tính toán song song mạnh cho đồ họa, xử lý ảnh và huấn luyện mô hình.',
+              '<strong>Điện toán lượng tử (Quantum Computing):</strong> Dùng qubit và chồng chập/vướng víu lượng tử, hứa hẹn giải nhanh một số bài toán đặc thù (mô phỏng phân tử, tối ưu tổ hợp, mật mã) chứ không thay thế hoàn toàn máy tính cổ điển.'
+            ],
+            highlight: 'Hiểu đúng giới hạn của từng kiến trúc giúp sinh viên chọn đúng công cụ: CPU cho logic điều khiển, GPU/TPU cho tính toán ma trận song song.',
+            question: 'TPU/DSA mạnh hơn CPU ở điểm nào và phù hợp với nhóm bài toán nào?'
+          },
+          {
+            num: 8,
+            toc: 'Tiêu chí chọn máy sinh viên',
+            title: 'Cẩm nang chọn cấu hình máy tính phù hợp cho sinh viên CNTT',
+            content: [
+              '<strong>RAM:</strong> Tối thiểu 16GB (ưu tiên nâng cấp được) để chạy thoải mái IDE, trình duyệt, máy ảo/container.',
+              '<strong>Lưu trữ:</strong> SSD NVMe từ 512GB trở lên, giữ trống ít nhất 15–20% dung lượng để hệ điều hành và SSD hoạt động tối ưu.',
+              '<strong>CPU & Pin/Tản nhiệt:</strong> CPU đa nhân thế hệ mới, tản nhiệt ổn định, bàn phím gõ thoải mái và trọng lượng cân đối giữa mang đi học và làm việc.'
+            ],
+            highlight: 'Đừng chạy theo thông số hào nhoáng không cần thiết; hãy cân bằng RAM 16GB+, SSD NVMe 512GB+, màn hình chống lóa và cổng kết nối đủ dùng cho 3–4 năm học.',
+            question: 'Nếu ngân sách có hạn và chỉ được nâng cấp một linh kiện trước khi học lập trình, bạn ưu tiên nâng cấp gì?'
+          }
+        ]
+      },
+      {
+        id: 'bai-03',
+        order: '03',
+        fileName: 'slide-03-operating-system.deck',
+        topicId: 'HARDWARE_OS',
+        topicLabel: 'Phần cứng & Hệ điều hành',
+        accent: 'from-fpt-teal to-emerald-500',
+        title: 'Tổng quan về Hệ điều hành & Môi trường số đa nền tảng',
+        summary: 'Nắm vững khái niệm và vai trò OS, phân loại OS & tiện ích tích hợp, cài đặt & tối ưu OS, hệ sinh thái hợp nhất, so sánh VM và Container/Docker, cùng xu hướng AI-Integrated OS.',
+        slides: [
+          {
+            num: 1,
+            toc: 'Khái niệm & Vai trò OS',
+            title: 'Hệ điều hành (OS) là gì và giữ vai trò gì trong hệ thống?',
+            content: [
+              '<strong>Hệ điều hành (Operating System)</strong> là phần mềm hệ thống trung gian giữa phần cứng máy tính và các chương trình ứng dụng.',
+              'Quản lý <strong>tiến trình & luồng (Process/Thread)</strong>, cấp phát <strong>bộ nhớ</strong>, tổ chức <strong>hệ thống tệp (File System)</strong>, điều khiển <strong>thiết bị I/O</strong> và thực thi <strong>phân quyền/bảo mật</strong>.',
+              'Cung cấp giao diện tương tác (GUI, CLI, API/System Call) để ứng dụng và người dùng vận hành an toàn.'
+            ],
+            highlight: 'Khi chương trình của bạn đọc file hoặc mở kết nối mạng, nó gửi lời gọi hệ thống (system call) để OS kiểm tra quyền và thực thi thay.',
+            question: 'Điều gì xảy ra nếu ứng dụng trực tiếp ghi đè lên vùng nhớ của ứng dụng khác mà không qua sự kiểm soát của OS?'
+          },
+          {
+            num: 2,
+            toc: 'Phân loại OS & Tiện ích',
+            title: 'Phân loại Hệ điều hành và bộ tiện ích tích hợp sẵn',
+            content: [
+              '<strong>Desktop/Laptop OS:</strong> Windows, macOS, các bản phân phối Linux (Ubuntu, Fedora, Debian...).',
+              '<strong>Mobile & Embedded OS:</strong> Android, iOS, iPadOS, RTOS/Linux nhúng trên thiết bị thông minh.',
+              '<strong>Server OS:</strong> Linux Server, Windows Server tối ưu tính ổn định, bảo mật và vận hành liên tục.',
+              '<strong>Tiện ích tích hợp:</strong> Trình quản lý tệp, Task Manager/Activity Monitor/htop, công cụ nén/giải nén, tường lửa, cập nhật hệ thống và dòng lệnh (PowerShell, Terminal, zsh/bash).'
+            ],
+            highlight: 'Làm quen sớm với Terminal/Shell và công cụ giám sát tài nguyên giúp bạn chẩn đoán lỗi nhanh gấp nhiều lần so với chỉ thao tác chuột.',
+            question: 'Kể tên hai tiện ích có sẵn trên OS giúp kiểm tra tiến trình đang chiếm nhiều CPU hoặc RAM.'
+          },
+          {
+            num: 3,
+            toc: 'Cài đặt & Tối ưu OS',
+            title: 'Cài đặt hệ điều hành chuẩn chỉnh và tối ưu sử dụng hiệu quả',
+            content: [
+              'Tải bộ cài chính thống, kiểm tra mã băm (checksum) khi cần, sao lưu dữ liệu quan trọng trước khi phân vùng và cài đặt.',
+              'Cài đặt đầy đủ driver thiết bị và bản vá bảo mật; tắt ứng dụng khởi động cùng hệ thống không cần thiết.',
+              'Duy trì thói quen phân tách thư mục dữ liệu, dọn tệp rác an toàn và không cài phần mềm crack tiềm ẩn mã độc.'
+            ],
+            highlight: 'Một hệ điều hành sạch, cập nhật đều đặn và ít tiến trình nền thừa giúp máy khởi động nhanh, mát hơn và ít xung đột khi cài môi trường lập trình.',
+            question: 'Vì sao sinh viên CNTT nên tránh cài đặt hệ điều hành hoặc phần mềm bẻ khóa từ nguồn không rõ ràng?'
+          },
+          {
+            num: 4,
+            toc: 'Hệ sinh thái hợp nhất',
+            title: 'Làm việc trong môi trường số đa nền tảng & Hệ sinh thái hợp nhất',
+            content: [
+              'Người dùng hiện đại làm việc xuyên suốt giữa laptop, điện thoại, tablet và dịch vụ đám mây.',
+              '<strong>Hệ sinh thái hợp nhất</strong> đồng bộ ghi chú, tệp, mật khẩu, thông báo, chia sẻ tệp nhanh và chuyển tiếp tác vụ liền mạch giữa các thiết bị.',
+              'Khi làm việc đa nền tảng (Windows/macOS/Linux), cần chú ý đường dẫn tệp, ký tự xuống dòng, phân biệt chữ hoa/thường và quản lý phiên bản mã nguồn.'
+            ],
+            highlight: 'Dùng Git kết hợp kho lưu trữ đám mây và cấu hình môi trường nhất quán giúp bạn chuyển đổi giữa máy lớp học và máy cá nhân không bị "lệch môi trường".',
+            question: 'Thách thức phổ biến nào thường gặp khi chuyển dự án lập trình giữa Windows và Linux/macOS?'
+          },
+          {
+            num: 5,
+            toc: 'Ảo hóa VM vs Container',
+            title: 'Ảo hóa truyền thống (VM) và Container hóa (Docker)',
+            content: [
+              '<strong>Máy ảo (Virtual Machine - VM):</strong> Mô phỏng phần cứng ảo và chạy trọn vẹn một hệ điều hành khách riêng biệt thông qua Hypervisor — cô lập mạnh nhưng tốn RAM/dung lượng và khởi động chậm hơn.',
+              '<strong>Container (ví dụ Docker):</strong> Đóng gói ứng dụng cùng thư viện phụ thuộc và chia sẻ trực tiếp nhân (kernel) của hệ điều hành chủ — nhẹ, khởi động tính bằng giây và dễ tái lập môi trường.'
+            ],
+            highlight: 'Với sinh viên học cơ sở dữ liệu, web hoặc microservices, Docker giúp chạy nhanh PostgreSQL, Redis hay môi trường kiểm thử mà không làm rối máy chính.',
+            question: 'Tại sao Container thường nhẹ và khởi động nhanh hơn đáng kể so với máy ảo truyền thống?'
+          },
+          {
+            num: 6,
+            toc: 'AI-Integrated OS',
+            title: 'Xu hướng Hệ điều hành tích hợp AI (AI-Integrated OS)',
+            content: [
+              'Hệ điều hành hiện đại tích hợp trợ lý AI cấp hệ thống, tìm kiếm ngữ nghĩa tệp/nội dung, tóm tắt thao tác và hỗ trợ điều phối tác vụ.',
+              'Tận dụng NPU/GPU để xử lý một phần suy luận cục bộ nhằm giảm độ trễ và hạn chế gửi dữ liệu nhạy cảm ra ngoài.',
+              'Đi kèm yêu cầu chặt chẽ về quyền truy cập dữ liệu, nhật ký kiểm soát và chủ quyền thông tin cá nhân.'
+            ],
+            highlight: 'Khi dùng tính năng AI tích hợp trong OS, hãy kiểm tra cài đặt quyền riêng tư để biết dữ liệu nào xử lý trên máy và dữ liệu nào gửi lên đám mây.',
+            question: 'Lợi ích và rủi ro quyền riêng tư chính của các tính năng AI tích hợp sâu vào hệ điều hành là gì?'
+          },
+          {
+            num: 7,
+            toc: 'Quy trình xử lý sự cố OS',
+            title: 'Kỹ năng chẩn đoán và xử lý lỗi cơ bản trên hệ điều hành',
+            content: [
+              'Quan sát triệu chứng cụ thể: thông báo lỗi, mã lỗi, thời điểm xảy ra (sau cập nhật, cắm thiết bị mới hay mở ứng dụng nặng).',
+              'Kiểm tra tài nguyên (CPU, RAM, Disk, Network), xem log hệ thống, thử khởi động lại hoặc cô lập thành phần gây lỗi.',
+              'Luôn sao lưu trước khi chỉnh sửa sâu cấu hình hệ thống hoặc registry/kernel.'
+            ],
+            highlight: 'Đọc kỹ thông báo lỗi thay vì bấm "OK" cho qua là kỹ năng sống còn giúp bạn tự sửa lỗi nhanh hơn.',
+            question: 'Khi một ứng dụng bị treo cứng và không phản hồi giao diện, bạn sẽ xử lý theo các bước nào?'
+          },
+          {
+            num: 8,
+            toc: 'Tổng kết Bài 03',
+            title: 'Tổng kết: Làm chủ Hệ điều hành làm bệ phóng kỹ thuật',
+            content: [
+              'OS điều phối tài nguyên, bảo vệ tiến trình và tạo cầu nối an toàn giữa phần cứng và phần mềm.',
+              'Thành thạo tiện ích hệ thống, dòng lệnh, môi trường đa nền tảng và Docker giúp quy trình học tập mượt mà.',
+              'Hiểu rõ VM, Container và AI-Integrated OS giúp bạn thích ứng nhanh với hạ tầng hiện đại.'
+            ],
+            highlight: 'Mỗi buổi thực hành lập trình đều là cơ hội rèn kỹ năng làm chủ hệ điều hành của chính bạn.',
+            question: 'Nêu 3 thói quen sử dụng hệ điều hành giúp tăng năng suất và độ an toàn cho sinh viên CNTT.'
+          }
+        ]
+      },
+      {
+        id: 'bai-04',
+        order: '04',
+        fileName: 'slide-04-software-cloud-platform.deck',
+        topicId: 'CLOUD_NET',
+        topicLabel: 'Phần mềm, Cloud & Mạng',
+        accent: 'from-fpt-blueLight to-indigo-500',
+        title: 'Tổng quan về Phần mềm, Đám mây & Nền tảng',
+        summary: 'Hiểu định nghĩa phần mềm theo IEEE và các nhóm phần mềm, bản quyền & giấy phép, khái niệm Cloud theo ISO & 5 đặc tính NIST, mô hình IaaS/PaaS/SaaS, triển khai Cloud và khái niệm Platform.',
+        slides: [
+          {
+            num: 1,
+            toc: 'Định nghĩa IEEE & Phân loại',
+            title: 'Khái niệm phần mềm theo IEEE và phân loại phần mềm',
+            content: [
+              'Theo <strong>IEEE</strong>, phần mềm bao gồm chương trình máy tính, thủ tục, tài liệu kèm theo và dữ liệu liên quan phục vụ vận hành hệ thống.',
+              '<strong>Phần mềm hệ thống:</strong> Hệ điều hành, trình điều khiển thiết bị, trình biên dịch/thông dịch.',
+              '<strong>Phần mềm ứng dụng:</strong> Trình duyệt, công cụ văn phòng, ứng dụng học tập, thương mại điện tử.',
+              '<strong>Phần mềm nhúng:</strong> Chạy trên vi điều khiển/thiết bị chuyên dụng (máy giặt thông minh, cảm biến, bộ điều khiển).',
+              '<strong>Phần mềm mã nguồn mở (OSS):</strong> Cho phép xem, sửa đổi và phân phối mã nguồn theo điều khoản giấy phép cụ thể.'
+            ],
+            highlight: 'Phần mềm không chỉ là file chạy (.exe, .apk) mà còn có tài liệu hướng dẫn, cấu hình và dữ liệu đi kèm để hệ thống duy trì ổn định.',
+            question: 'Tại sao tài liệu kỹ thuật và dữ liệu cấu hình cũng được xem là một phần của phần mềm theo IEEE?'
+          },
+          {
+            num: 2,
+            toc: 'Bản quyền & Giấy phép',
+            title: 'Bản quyền phần mềm và các loại giấy phép phổ biến',
+            content: [
+              'Phần mềm được bảo hộ bản quyền; sử dụng, sao chép hoặc phân phối trái phép gây rủi ro pháp lý và bảo mật.',
+              '<strong>Giấy phép thương mại / Độc quyền:</strong> Quyền sử dụng giới hạn theo hợp đồng/thuê bao hoặc dành cho giáo dục (như gói sinh viên).',
+              '<strong>Giấy phép mã nguồn mở (MIT, Apache 2.0, GPL...):</strong> Khác nhau về mức độ ràng buộc khi chỉnh sửa, kết hợp mã nguồn hoặc phân phối lại.'
+            ],
+            highlight: 'Trước khi copy/sử dụng thư viện hoặc mã nguồn trên mạng cho dự án, hãy kiểm tra giấy phép (như MIT hay GPL) và tận dụng ưu đãi bản quyền giáo dục hợp lệ.',
+            question: 'Điểm khác nhau cốt lõi giữa giấy phép mã nguồn mở cho phép (như MIT) và giấy phép copyleft (như GPL) là gì?'
+          },
+          {
+            num: 3,
+            toc: 'Cloud theo ISO & 5 đặc tính NIST',
+            title: 'Điện toán đám mây theo ISO và 5 đặc tính cốt lõi theo NIST',
+            content: [
+              'Theo chuẩn <strong>ISO/IEC</strong> và <strong>NIST</strong>, Cloud cung cấp quyền truy cập mạng theo yêu cầu tới một tập tài nguyên tính toán cấu hình được (mạng, máy chủ, lưu trữ, ứng dụng).',
+              '<strong>5 đặc tính NIST:</strong> (1) Tự phục vụ theo yêu cầu (On-demand self-service), (2) Truy cập mạng rộng khắp, (3) Tập hợp tài nguyên chia sẻ (Resource pooling), (4) Co giãn linh hoạt nhanh chóng (Rapid elasticity), (5) Đo lường được dịch vụ.'
+            ],
+            highlight: 'Khi lượng người truy cập website tăng đột biến vào kỳ đăng ký môn học, tính "co giãn linh hoạt" cho phép mở rộng tài nguyên rồi thu gọn khi vắng khách để tiết kiệm chi phí.',
+            question: 'Đặc tính "đo lường được dịch vụ" (Measured service) mang lại lợi ích gì cho cả nhà cung cấp và khách hàng Cloud?'
+          },
+          {
+            num: 4,
+            toc: 'Mô hình dịch vụ IaaS / PaaS / SaaS',
+            title: 'So sánh 3 mô hình dịch vụ đám mây: IaaS, PaaS và SaaS',
+            content: [
+              '<strong>IaaS (Infrastructure as a Service):</strong> Thuê máy chủ ảo, mạng ảo, lưu trữ; bạn quản lý OS, runtime, dữ liệu và ứng dụng (VD: EC2, Compute Engine).',
+              '<strong>PaaS (Platform as a Service):</strong> Nền tảng sẵn môi trường chạy, triển khai code, cơ sở dữ liệu để bạn tập trung vào mã ứng dụng và dữ liệu.',
+              '<strong>SaaS (Software as a Service):</strong> Phần mềm hoàn chỉnh chạy trên trình duyệt/ứng dụng; nhà cung cấp vận hành gần như toàn bộ hạ tầng và phần mềm (VD: email cloud, công cụ cộng tác trực tuyến).'
+            ],
+            highlight: 'Càng đi từ IaaS sang SaaS, bạn càng bớt phải tự quản trị hạ tầng cấp thấp nhưng mức tùy biến hạ tầng hệ thống cũng thu hẹp tương ứng.',
+            question: 'Nếu bạn chỉ muốn đẩy code web lên chạy nhanh mà không muốn tự cấu hình vá bảo mật cho hệ điều hành máy chủ, mô hình nào phù hợp hơn?'
+          },
+          {
+            num: 5,
+            toc: 'Mô hình triển khai Cloud',
+            title: 'Các mô hình triển khai: Public, Private, Hybrid, Multi & Community Cloud',
+            content: [
+              '<strong>Public Cloud:</strong> Hạ tầng dùng chung cho công chúng do nhà cung cấp Cloud vận hành.',
+              '<strong>Private Cloud:</strong> Dành riêng cho một tổ chức (tại chỗ hoặc do bên thứ ba vận hành riêng biệt).',
+              '<strong>Hybrid Cloud:</strong> Kết hợp Public và Private Cloud, trao đổi dữ liệu/ứng dụng linh hoạt giữa hai môi trường.',
+              '<strong>Multi-Cloud:</strong> Sử dụng dịch vụ từ nhiều nhà cung cấp Cloud khác nhau để tránh phụ thuộc một nhà cung cấp (vendor lock-in) hoặc tối ưu tính năng.',
+              '<strong>Community Cloud:</strong> Dùng chung bởi một cộng đồng các tổ chức có chung mục tiêu/quy chuẩn.'
+            ],
+            highlight: 'Nhiều doanh nghiệp giữ dữ liệu nhạy cảm nội bộ (Private) nhưng chạy ứng dụng hướng khách hàng và phân tích co giãn trên Public Cloud — tạo thành Hybrid Cloud.',
+            question: 'Tại sao nhiều tổ chức áp dụng chiến lược Multi-Cloud hoặc Hybrid Cloud?'
+          },
+          {
+            num: 6,
+            toc: 'Khái niệm Platform & PaaS',
+            title: 'Nền tảng (Platform) và PaaS trong phát triển phần mềm hiện đại',
+            content: [
+              '<strong>Platform</strong> là lớp nền tảng cung cấp công cụ, API, dịch vụ và chuẩn tích hợp để xây dựng, mở rộng và vận hành ứng dụng/sản phẩm số.',
+              '<strong>PaaS</strong> hiện thực hóa khái niệm nền tảng ở tầng đám mây: tích hợp sẵn runtime, build/deploy tự động, giám sát và mở rộng.',
+              'Giúp đội ngũ rút ngắn thời gian đưa sản phẩm ra thị trường (time-to-market) và giảm chi phí vận hành hạ tầng lặp lại.'
+            ],
+            highlight: 'Nhờ nền tảng đám mây và dịch vụ quản lý sẵn, một nhóm sinh viên có thể triển khai ứng dụng web có HTTPS và cơ sở dữ liệu trong thời gian ngắn.',
+            question: 'Platform giúp giảm bớt những công việc lặp lại nào cho đội phát triển ứng dụng?'
+          },
+          {
+            num: 7,
+            toc: 'Trách nhiệm chia sẻ & Chi phí Cloud',
+            title: 'Trách nhiệm chia sẻ (Shared Responsibility) và quản trị chi phí Cloud',
+            content: [
+              'Cloud không có nghĩa là "miễn phí" hay "mặc định an toàn tuyệt đối": bảo mật và chi phí là trách nhiệm chia sẻ giữa nhà cung cấp và người dùng.',
+              'Người dùng chịu trách nhiệm cấu hình quyền truy cập (IAM), bảo vệ dữ liệu/mật khẩu và tắt tài nguyên không dùng.',
+              'Quên tắt máy chủ thử nghiệm hoặc để rò rỉ khóa API có thể gây hóa đơn bất ngờ hoặc sự cố bảo mật.'
+            ],
+            highlight: 'Luôn đặt cảnh báo ngân sách (billing alert) và tắt/xóa tài nguyên thử nghiệm sau khi làm lab xong là nguyên tắc vàng khi học Cloud.',
+            question: 'Vì sao sinh viên thực hành Cloud cần thiết lập hạn mức/cảnh báo chi phí và dọn tài nguyên sau buổi học?'
+          },
+          {
+            num: 8,
+            toc: 'Tổng kết Bài 04',
+            title: 'Tổng kết: Phần mềm, bản quyền và kiến trúc Đám mây – Nền tảng',
+            content: [
+              'Phần mềm gồm mã, thủ tục, tài liệu và dữ liệu; cần tôn trọng bản quyền và giấy phép sử dụng.',
+              'Cloud theo chuẩn NIST có 5 đặc tính cốt lõi, chia theo mô hình IaaS/PaaS/SaaS và các kiểu triển khai linh hoạt.',
+              'Platform/PaaS giúp tập trung vào giá trị nghiệp vụ nhưng luôn gắn với kỷ luật bảo mật và chi phí.'
+            ],
+            highlight: 'Nắm vững bức tranh này giúp bạn chọn đúng kiến trúc khi xây dựng đồ án môn học và hệ thống thực tế.',
+            question: 'Tóm tắt sự khác biệt chính giữa IaaS, PaaS và SaaS bằng một ví dụ thực tế cho từng loại.'
+          }
+        ]
+      },
+      {
+        id: 'bai-05',
+        order: '05',
+        fileName: 'slide-05-network-internet-iot.deck',
+        topicId: 'CLOUD_NET',
+        topicLabel: 'Phần mềm, Cloud & Mạng',
+        accent: 'from-fpt-teal to-fpt-blue',
+        title: 'Tổng quan về Mạng trong kỷ nguyên số & Internet 4.0',
+        summary: 'Tìm hiểu mạng máy tính, giao thức, mô hình OSI & TCP/IP, đơn vị dữ liệu PDU, LAN/WAN, Internet & WWW, IP, TCP vs UDP, Wi-Fi/Bluetooth & 1G–5G, 6G/Vệ tinh/IPv4 vs IPv6 và IoT.',
+        slides: [
+          {
+            num: 1,
+            toc: 'Mạng, Giao thức, OSI & TCP/IP',
+            title: 'Mạng máy tính, giao thức và mô hình OSI / TCP/IP',
+            content: [
+              '<strong>Mạng máy tính</strong> kết nối các thiết bị để chia sẻ dữ liệu, tài nguyên và dịch vụ.',
+              '<strong>Giao thức (Protocol)</strong> là bộ quy tắc chuẩn hóa cách thiết bị định dạng, gửi, nhận và xử lý dữ liệu (như HTTP/HTTPS, DNS, TCP/IP).',
+              '<strong>Mô hình OSI (7 tầng)</strong> phân tầng lý thuyết chuẩn hóa (Physical, Data Link, Network, Transport, Session, Presentation, Application); <strong>TCP/IP (4 tầng)</strong> phản ánh kiến trúc mạng thực tế phổ biến nhất.'
+            ],
+            highlight: 'Chia mạng thành các tầng giúp kỹ sư cô lập lỗi dễ dàng: lỗi cáp/Wi-Fi ở tầng dưới khác với lỗi trạng thái HTTP ở tầng ứng dụng.',
+            question: 'Mô hình OSI và TCP/IP giúp gì cho việc thiết kế và khắc phục sự cố mạng?'
+          },
+          {
+            num: 2,
+            toc: 'PDU & LAN / WAN',
+            title: 'Đơn vị dữ liệu giao thức (PDU) và phân biệt mạng LAN với WAN',
+            content: [
+              '<strong>PDU (Protocol Data Unit):</strong> Dữ liệu được đóng gói qua từng tầng với tên gọi đặc trưng (như Bit/Frame/Packet/Segment hay Data tùy tầng và mô hình).',
+              '<strong>LAN (Local Area Network):</strong> Mạng phạm vi cục bộ (phòng học, văn phòng, gia đình), tốc độ cao, độ trễ thấp, do tổ chức tự quản trị.',
+              '<strong>WAN (Wide Area Network):</strong> Kết nối các mạng ở khoảng cách địa lý rộng (liên chi nhánh, liên tỉnh/quốc gia) thông qua hạ tầng viễn thông.'
+            ],
+            highlight: 'Mạng Wi-Fi trong phòng lab FPT Polytechnic là một phần của LAN; khi bạn truy cập website đặt ở máy chủ nước ngoài, lưu lượng đi qua các tuyến WAN và mạng xương sống Internet.',
+            question: 'Khác biệt chính về phạm vi địa lý và hạ tầng kết nối giữa LAN và WAN là gì?'
+          },
+          {
+            num: 3,
+            toc: 'Internet & WWW',
+            title: 'Phân biệt Internet và World Wide Web (WWW)',
+            content: [
+              '<strong>Internet</strong> là hệ thống mạng toàn cầu liên kết hàng tỷ thiết bị và mạng con sử dụng bộ giao thức TCP/IP.',
+              '<strong>WWW (World Wide Web)</strong> là một dịch vụ thông tin chạy trên Internet, gồm các tài nguyên web liên kết với nhau qua siêu liên kết (URL) và giao thức HTTP/HTTPS.',
+              'Trên Internet còn nhiều dịch vụ khác ngoài Web như email, truyền tệp, DNS, VPN, streaming hay game trực tuyến.'
+            ],
+            highlight: 'Nói "mất mạng" đôi khi không phải mất Internet mà là lỗi DNS hoặc mất kết nối tới một dịch vụ Web cụ thể — kiểm tra ping IP giúp phân biệt nhanh.',
+            question: 'Vì sao nói World Wide Web là một dịch vụ trên Internet chứ không đồng nhất với Internet?'
+          },
+          {
+            num: 4,
+            toc: 'Địa chỉ IP, TCP vs UDP',
+            title: 'Địa chỉ IP, định tuyến và so sánh giao thức TCP với UDP',
+            content: [
+              '<strong>Địa chỉ IP</strong> định danh thiết bị/giao diện trên mạng để các gói tin được định tuyến tới đúng đích.',
+              '<strong>TCP (Transmission Control Protocol):</strong> Hướng kết nối, đảm bảo truyền tin cậy, đúng thứ tự, có kiểm soát lỗi và luồng — phù hợp tải trang web, chuyển tệp, API giao dịch.',
+              '<strong>UDP (User Datagram Protocol):</strong> Không thiết lập kết nối phức tạp, độ trễ thấp, không đảm bảo mọi gói đều đến hoặc đúng thứ tự — phù hợp video/âm thanh trực tiếp, game thời gian thực, DNS.'
+            ],
+            highlight: 'Xem livestream hoặc gọi video ưu tiên độ trễ thấp và mượt mà nên dùng UDP; tải mã nguồn hoặc dữ liệu tài chính cần chính xác từng byte nên dùng TCP.',
+            question: 'Khi nào nên chọn UDP thay vì TCP cho một ứng dụng mạng?'
+          },
+          {
+            num: 5,
+            toc: 'Wi-Fi, Bluetooth & 1G–5G',
+            title: 'Kết nối không dây: Wi-Fi, Bluetooth và hành trình di động 1G đến 5G',
+            content: [
+              '<strong>Wi-Fi:</strong> Kết nối mạng cục bộ không dây băng thông cao cho máy tính, điện thoại, thiết bị thông minh.',
+              '<strong>Bluetooth:</strong> Kết nối tầm ngắn, tiết kiệm năng lượng cho tai nghe, chuột/bàn phím, thiết bị đeo.',
+              '<strong>Di động 1G → 5G:</strong> Từ thoại analog (1G), thoại số/SMS (2G), dữ liệu di động/internet (3G), băng thông rộng tốc độ cao (4G LTE) đến tốc độ siêu cao, độ trễ cực thấp và kết nối mật độ lớn (5G).'
+            ],
+            highlight: 'Bluetooth tối ưu cho thiết bị cá nhân tầm gần và tiết kiệm pin, trong khi Wi-Fi hoặc 5G gánh tải dữ liệu lớn và truy cập internet tốc độ cao.',
+            question: 'Điểm nổi bật của mạng 5G so với 4G trong việc phục vụ các ứng dụng thời gian thực là gì?'
+          },
+          {
+            num: 6,
+            toc: '6G, Vệ tinh & IPv4 vs IPv6',
+            title: 'Hướng tới 6G, Internet vệ tinh và chuyển dịch từ IPv4 sang IPv6',
+            content: [
+              '<strong>IPv4 (32-bit):</strong> Khoảng ~4,3 tỷ địa chỉ đã cạn kiệt dần, dẫn tới kỹ thuật NAT và tăng tốc triển khai <strong>IPv6 (128-bit)</strong> với không gian địa chỉ khổng lồ.',
+              '<strong>Internet vệ tinh quỹ đạo thấp (LEO) & nghiên cứu 6G:</strong> Hỗ trợ phủ sóng vùng xa, biển đảo, di chuyển đặc thù và tích hợp cảm biến/AI mạng thế hệ mới.'
+            ],
+            highlight: 'Không gian địa chỉ 128-bit của IPv6 giúp mỗi thiết bị trong kỷ nguyên hàng tỷ cảm biến IoT đều có thể định danh trực tiếp dễ dàng hơn.',
+            question: 'Nguyên nhân chính thúc đẩy việc chuyển dịch từ IPv4 sang IPv6 trên toàn cầu là gì?'
+          },
+          {
+            num: 7,
+            toc: 'IoT & Ứng dụng thông minh',
+            title: 'Internet of Things (IoT) trong Thành phố, Y tế và Nhà thông minh',
+            content: [
+              '<strong>IoT</strong> kết nối cảm biến, bộ chấp hành và thiết bị vật lý qua mạng để thu thập dữ liệu và tự động hóa phản hồi.',
+              '<strong>Nhà thông minh:</strong> Điều khiển chiếu sáng, điều hòa, an ninh, tiết kiệm năng lượng theo ngữ cảnh.',
+              '<strong>Y tế thông minh:</strong> Thiết bị đeo theo dõi nhịp tim, chỉ số sức khỏe và cảnh báo từ xa.',
+              '<strong>Thành phố thông minh:</strong> Giao thông thông minh, chiếu sáng công cộng thích ứng, quản lý môi trường và hạ tầng.'
+            ],
+            highlight: 'Một hệ thống IoT hoàn chỉnh gồm 4 lớp giá trị: cảm biến/thiết bị → kết nối mạng → nền tảng xử lý/lưu trữ dữ liệu → ứng dụng điều khiển cho người dùng.',
+            question: 'Nêu một lợi ích cụ thể của IoT trong y tế thông minh hoặc thành phố thông minh.'
+          },
+          {
+            num: 8,
+            toc: 'Bảo mật IoT & Tổng kết Bài 05',
+            title: 'Thách thức bảo mật IoT và tổng kết Mạng – Internet 4.0',
+            content: [
+              'Nhiều thiết bị IoT có tài nguyên hạn chế, chạy liên tục và dễ bị bỏ quên cập nhật bản vá nếu cấu hình yếu.',
+              'Rủi ro thường gặp: mật khẩu mặc định dễ đoán, cổng dịch vụ mở thừa, truyền dữ liệu thiếu mã hóa hoặc chiếm quyền điều khiển thiết bị.',
+              'Biện pháp cốt lõi: đổi mật khẩu mạnh, phân tách mạng (VLAN/Guest Wi-Fi), cập nhật firmware và mã hóa truyền tin.'
+            ],
+            highlight: 'Khi làm đồ án IoT, đừng bao giờ giữ mật khẩu mặc định hay gửi dữ liệu điều khiển qua kênh không mã hóa.',
+            question: 'Vì sao thiết bị IoT gia đình/văn phòng cần được đặt trên mạng tách biệt và đổi mật khẩu mặc định ngay?'
+          }
+        ]
+      },
+      {
+        id: 'bai-06',
+        order: '06',
+        fileName: 'slide-06-computational-thinking-automation.deck',
+        topicId: 'THINKING_AI',
+        topicLabel: 'Tư duy & AI/Dữ liệu',
+        accent: 'from-fpt-orange to-fpt-teal',
+        title: 'Tư duy lập trình & Tự động hóa',
+        summary: 'Rèn Tư duy máy tính (CT): phân rã, trừu tượng hóa, nhận diện khuôn mẫu, thiết kế thuật toán; nhận diện giới hạn thuật toán; khám phá BPA, RPA, IaC và xu hướng Low-code, No-code, Vibe-code.',
+        slides: [
+          {
+            num: 1,
+            toc: 'Tư duy máy tính (CT)',
+            title: 'Tư duy máy tính (Computational Thinking) là gì?',
+            content: [
+              '<strong>Tư duy máy tính</strong> là phương pháp tiếp cận và giải quyết bài toán sao cho kết quả có thể được thực thi hiệu quả bởi con người, máy tính hoặc cả hai.',
+              'Không chỉ dành cho dân lập trình mà giúp tư duy có cấu trúc, rõ ràng, kiểm chứng được và dễ mở rộng trong mọi lĩnh vực.',
+              'Gồm 4 trụ cột quen thuộc: <strong>Phân rã</strong>, <strong>Nhận diện khuôn mẫu</strong>, <strong>Trừu tượng hóa</strong> và <strong>Thiết kế thuật toán</strong>.'
+            ],
+            highlight: 'Trước khi gõ dòng code đầu tiên, hãy dành thời gian phân tích bài toán — viết code nhanh trên một bài toán hiểu sai chỉ tạo ra nhiều lỗi hơn.',
+            question: 'Tư duy máy tính giúp ích gì ngay cả khi bạn chưa chọn xong ngôn ngữ lập trình?'
+          },
+          {
+            num: 2,
+            toc: 'Phân rã & Trừu tượng hóa',
+            title: 'Phân rã bài toán (Decomposition) và Trừu tượng hóa (Abstraction)',
+            content: [
+              '<strong>Phân rã:</strong> Chia bài toán lớn phức tạp thành các bài toán con nhỏ, độc lập hơn, dễ thiết kế, kiểm thử và phân công.',
+              '<strong>Trừu tượng hóa:</strong> Lọc bỏ chi tiết vụn vặt không cần thiết ở tầng hiện tại, chỉ giữ lại thuộc tính và hành vi cốt lõi liên quan tới mục tiêu.'
+            ],
+            highlight: 'Khi xây dựng hệ thống quản lý thư viện, ở tầng nghiệp vụ mượn/trả ta quan tâm mã sách, độc giả và hạn trả — chưa cần bận tâm chi tiết điện áp trên chân chip ổ cứng.',
+            question: 'Hãy thử phân rã bài toán "Xây dựng trang đăng nhập sinh viên" thành 3–4 bước/thành phần nhỏ.'
+          },
+          {
+            num: 3,
+            toc: 'Nhận diện khuôn mẫu & Thuật toán',
+            title: 'Nhận diện khuôn mẫu (Pattern Recognition) và Thiết kế thuật toán',
+            content: [
+              '<strong>Nhận diện khuôn mẫu:</strong> Tìm điểm tương đồng, quy luật lặp lại hoặc cấu trúc chung giữa các trường hợp/dữ liệu để tái sử dụng giải pháp.',
+              '<strong>Thiết kế thuật toán:</strong> Xây dựng chuỗi bước hữu hạn, rõ ràng, xác định và dừng được để biến Input thành Output đúng đắn.',
+              'Đánh giá thuật toán qua tính đúng đắn, độ phức tạp thời gian/không gian và khả năng xử lý các trường hợp biên (edge cases).'
+            ],
+            highlight: 'Nhận ra nhiều biểu mẫu nhập liệu đều cần kiểm tra rỗng, định dạng email và độ dài giúp bạn viết hàm kiểm tra dùng chung thay vì lặp code.',
+            question: 'Trường hợp biên (edge case) là gì và tại sao bỏ sót trường hợp biên thường gây lỗi ngầm?'
+          },
+          {
+            num: 4,
+            toc: 'Giới hạn của thuật toán',
+            title: 'Nhận diện giới hạn của thuật toán và tính khả giải',
+            content: [
+              'Không phải bài toán nào cũng có thuật toán giải được trong thời gian thực tế.',
+              'Có những bài toán <strong>không khả giải thuật toán</strong> theo nghĩa tổng quát, và có những bài toán <strong>độ phức tạp bùng nổ</strong> khi kích thước dữ liệu tăng.',
+              'Trong thực tế, kỹ sư thường kết hợp thuật toán tối ưu, thuật toán xấp xỉ/heuristic hoặc thu hẹp ràng buộc bài toán.'
+            ],
+            highlight: 'Hiểu giới hạn thuật toán giúp bạn tránh chọn giải pháp vét cạn tốn hàng năm tính toán khi bài toán thực tế cần phản hồi trong vài mili-giây.',
+            question: 'Khi gặp bài toán tối ưu có không gian tìm kiếm quá lớn, hướng tiếp cận thực tế thường dùng là gì?'
+          },
+          {
+            num: 5,
+            toc: 'Tự động hóa trong IT & BPA/RPA',
+            title: 'Tự động hóa trong CNTT: phân biệt BPA và RPA',
+            content: [
+              'Tự động hóa giúp giảm thao tác thủ công lặp lại, tăng tốc độ, tính nhất quán và giảm sai sót do mệt mỏi.',
+              '<strong>BPA (Business Process Automation):</strong> Tự động hóa quy trình nghiệp vụ xuyên suốt qua hệ thống/API/luồng phê duyệt chuẩn hóa.',
+              '<strong>RPA (Robotic Process Automation):</strong> Dùng "bot phần mềm" mô phỏng thao tác người dùng trên giao diện ứng dụng (nhấp chuột, nhập liệu, copy giữa các hệ thống cũ ít API).'
+            ],
+            highlight: 'Nếu hai phần mềm có API chuẩn, tích hợp trực tiếp (BPA) thường bền vững hơn; nếu hệ thống cũ chỉ thao tác qua giao diện, RPA là giải pháp chuyển tiếp hiệu quả.',
+            question: 'Điểm khác biệt chính giữa BPA và RPA nằm ở cách thức tự động hóa quy trình là gì?'
+          },
+          {
+            num: 6,
+            toc: 'IaC (Infrastructure as Code)',
+            title: 'Infrastructure as Code (IaC): Quản lý hạ tầng bằng mã nguồn',
+            content: [
+              '<strong>IaC</strong> định nghĩa và cấp phát máy chủ, mạng, quyền, môi trường thông qua tệp cấu hình/mã khai báo thay vì cấu hình thủ công từng bước trên giao diện.',
+              'Cho phép quản lý phiên bản bằng Git, tái tạo môi trường đồng nhất, giảm "cấu hình tay bị lệch" và tự động hóa kiểm thử/triển khai.'
+            ],
+            highlight: 'Khi hạ tầng được viết thành mã, bạn có thể tạo mới hoặc khôi phục môi trường thử nghiệm nhanh chóng và có lịch sử thay đổi rõ ràng.',
+            question: 'Lợi ích lớn nhất của việc lưu tệp cấu hình hạ tầng (IaC) trong hệ thống quản lý phiên bản Git là gì?'
+          },
+          {
+            num: 7,
+            toc: 'Low-code, No-code & Vibe-code',
+            title: 'Low-code, No-code và xu hướng Vibe-code trong phát triển phần mềm',
+            content: [
+              '<strong>No-code / Low-code:</strong> Xây dựng ứng dụng, biểu mẫu, quy trình nhanh bằng giao diện kéo-thả trực quan kết hợp ít mã hoặc đoạn mã mở rộng.',
+              '<strong>Vibe-code:</strong> Phong cách phát triển nhanh nhờ trao đổi ngôn ngữ tự nhiên với trợ lý AI để tạo, tinh chỉnh và lặp thử nghiệm mã nguồn liên tục.',
+              'Cả No-code/Low-code lẫn Vibe-code đều cần nền tảng đọc hiểu code, kiểm thử, bảo mật và kiến trúc để sản phẩm không biến thành "hộp đen khó bảo trì".'
+            ],
+            highlight: 'AI hoặc Low-code giúp tạo bản mẫu rất nhanh, nhưng chính bạn mới là người chịu trách nhiệm kiểm tra logic, bảo mật và chất lượng mã trước khi bàn giao.',
+            question: 'Rủi ro lớn nhất nếu lạm dụng Low-code hoặc Vibe-code mà thiếu tư duy kiểm thử và đọc hiểu mã nguồn là gì?'
+          },
+          {
+            num: 8,
+            toc: 'Tổng kết Bài 06',
+            title: 'Tổng kết: Tư duy có cấu trúc là gốc rễ của mọi tự động hóa',
+            content: [
+              'Tư duy máy tính (phân rã, trừu tượng hóa, nhận diện khuôn mẫu, thiết kế thuật toán) là nền tảng xuyên suốt lập trình.',
+              'Nhận diện giới hạn thuật toán giúp chọn chiến lược giải quyết phù hợp thực tế.',
+              'BPA, RPA, IaC, Low/No-code và Vibe-code mở rộng tốc độ làm việc khi đi cùng kỷ luật kỹ thuật.'
+            ],
+            highlight: 'Hãy luyện thói quen vẽ lưu đồ/bước giải trước khi code và luôn kiểm thử kỹ từng trường hợp.',
+            question: 'Trình bày 4 thành phần của Tư duy máy tính bằng ngôn ngữ của chính bạn.'
+          }
+        ]
+      },
+      {
+        id: 'bai-07',
+        order: '07',
+        fileName: 'slide-07-ai-data-working.deck',
+        topicId: 'THINKING_AI',
+        topicLabel: 'Tư duy & AI/Dữ liệu',
+        accent: 'from-fpt-blue to-fpt-tealLight',
+        title: 'Trí tuệ nhân tạo, Dữ liệu & Ứng dụng trong công việc',
+        summary: 'Tổng quan AI & tác động thực tiễn, kỹ thuật Prompt Engineering & cấu trúc prompt hoàn chỉnh, các mô hình AI & ứng dụng học tập/công việc, mối quan hệ Big Data (nguyên liệu) – AI (động cơ), hệ sinh thái dữ liệu bền vững và nguyên tắc lấy con người làm trung tâm.',
+        slides: [
+          {
+            num: 1,
+            toc: 'Tổng quan AI & Tác động',
+            title: 'Tổng quan Trí tuệ nhân tạo (AI) và tác động đa chiều',
+            content: [
+              '<strong>Trí tuệ nhân tạo (AI)</strong> là lĩnh vực xây dựng hệ thống có khả năng thực hiện các tác vụ đòi hỏi trí tuệ như nhận thức, suy luận, học từ dữ liệu, hiểu ngôn ngữ và tạo nội dung.',
+              'AI đang hiện diện sâu rộng trong tìm kiếm, dịch thuật, hỗ trợ lập trình, phân tích dữ liệu, chăm sóc khách hàng và sáng tạo đa phương tiện.',
+              'Bên cạnh cơ hội tăng năng suất mạnh mẽ, AI đặt ra yêu cầu về độ chính xác, bản quyền, thiên lệch dữ liệu và kiểm chứng thông tin.'
+            ],
+            highlight: 'Xem AI như một "cộng sự tăng tốc" giúp phác thảo, giải thích và gợi ý — không phải nguồn chân lý tuyệt đối miễn kiểm chứng.',
+            question: 'Vì sao kết quả do mô hình AI tạo ra vẫn cần được con người kiểm chứng trước khi đưa vào báo cáo hoặc mã nguồn chính thức?'
+          },
+          {
+            num: 2,
+            toc: 'Prompt Engineering & Cấu trúc',
+            title: 'Prompt Engineering và cấu trúc một câu lệnh (Prompt) hoàn chỉnh',
+            content: [
+              '<strong>Prompt Engineering</strong> là nghệ thuật và kỹ thuật thiết kế chỉ dẫn rõ ràng để mô hình AI hiểu đúng mục tiêu và trả về kết quả hữu ích.',
+              '<strong>Cấu trúc prompt hiệu quả gồm:</strong> (1) <strong>Vai trò (Role)</strong>, (2) <strong>Ngữ cảnh & Dữ liệu đầu vào (Context)</strong>, (3) <strong>Nhiệm vụ cụ thể (Task)</strong>, (4) <strong>Ràng buộc & Quy tắc (Constraints)</strong>, (5) <strong>Định dạng đầu ra (Output Format)</strong>.'
+            ],
+            highlight: 'Thay vì hỏi chung chung "Giải thích vòng lặp", hãy nêu rõ: vai trò gia sư CNTT năm nhất, trình độ người mới học, có ví dụ minh họa và bảng so sánh ngắn gọn.',
+            question: 'Thiếu phần "Ngữ cảnh" hoặc "Ràng buộc" trong prompt thường khiến câu trả lời của AI gặp vấn đề gì?'
+          },
+          {
+            num: 3,
+            toc: 'Mô hình AI & Ứng dụng thực tế',
+            title: 'Các nhóm mô hình AI và ứng dụng trong học tập, công việc',
+            content: [
+              '<strong>Mô hình ngôn ngữ lớn (LLM):</strong> Hỗ trợ giải thích khái niệm, tóm tắt tài liệu, gợi ý cấu trúc code, viết test case và rà soát lỗi.',
+              '<strong>Mô hình đa phương thức / tạo sinh hình ảnh, âm thanh, mã:</strong> Hỗ trợ phác thảo ý tưởng giao diện, minh họa sơ đồ, chuyển đổi ngữ cảnh.',
+              'Trong học tập, nguyên tắc đúng đắn là dùng AI để <strong>hiểu sâu và kiểm tra tư duy</strong>, tránh sao chép thụ động làm mất năng lực tự giải quyết.'
+            ],
+            highlight: 'Hãy yêu cầu AI gợi ý hướng tiếp cận hoặc đặt câu hỏi dẫn dắt thay vì nhờ làm trọn bài tập — như vậy kiến thức mới thực sự thuộc về bạn.',
+            question: 'Làm thế nào để dùng AI hỗ trợ học lập trình mà vẫn giữ được khả năng tự viết và gỡ lỗi độc lập?'
+          },
+          {
+            num: 4,
+            toc: 'Dữ liệu là nguyên liệu • AI là động cơ',
+            title: 'Dữ liệu lớn (Big Data) là nguyên liệu — AI là động cơ xử lý',
+            content: [
+              'Mô hình AI học mẫu hình và quy luật từ dữ liệu; chất lượng đầu vào quyết định trần chất lượng đầu ra ("garbage in, garbage out").',
+              '<strong>Big Data</strong> cung cấp nguồn dữ liệu đa dạng, quy mô lớn và cập nhật; <strong>AI</strong> đóng vai trò động cơ trích xuất tri thức, dự đoán và sinh phản hồi.',
+              'Dữ liệu thiếu sạch, sai lệch (bias) hoặc thiếu đại diện sẽ khiến "động cơ AI" học sai và khuếch đại sai lệch.'
+            ],
+            highlight: 'Một thuật toán thông minh đến đâu cũng không thể bù đắp hoàn toàn cho bộ dữ liệu huấn luyện sai lệch hoặc thiếu chuẩn hóa.',
+            question: 'Giải thích câu nói "Dữ liệu là nguyên liệu, AI là động cơ" và ý nghĩa của chất lượng dữ liệu.'
+          },
+          {
+            num: 5,
+            toc: 'Hệ sinh thái dữ liệu bền vững',
+            title: 'Xây dựng hệ sinh thái dữ liệu bền vững',
+            content: [
+              'Hệ sinh thái dữ liệu bền vững bao gồm thu thập minh bạch, chuẩn hóa định dạng, lưu trữ an toàn, quản trị chất lượng dữ liệu và chia sẻ có kiểm soát.',
+              'Cần vòng lặp phản hồi liên tục để phát hiện dữ liệu lỗi thời, trùng lặp hoặc sai lệch theo thời gian.',
+              'Tôn trọng quyền sở hữu, quyền riêng tư và vòng đời dữ liệu (lưu trữ, sử dụng, lưu trữ lạnh, hủy an toàn).'
+            ],
+            highlight: 'Quản trị dữ liệu tốt ngay từ khâu nhập liệu và thiết kế cơ sở dữ liệu giúp hệ thống về sau ít tốn công dọn dẹp.',
+            question: 'Những yếu tố nào giúp một hệ thống dữ liệu duy trì được độ tin cậy lâu dài?'
+          },
+          {
+            num: 6,
+            toc: 'Chính sách lấy con người làm trung tâm',
+            title: 'Chính sách, đạo đức AI và nguyên tắc lấy con người làm trung tâm',
+            content: [
+              'Công nghệ và chính sách AI phải đặt <strong>con người làm trung tâm</strong>: tôn trọng quyền con người, quyền riêng tư, sự minh bạch và khả năng con người giám sát/can thiệp (Human-in-the-loop).',
+              'Cảnh giác với thiên kiến thuật toán, xâm phạm dữ liệu cá nhân, thông tin sai lệch và rủi ro an ninh mạng.',
+              'Tổ chức và cá nhân cần áp dụng quy tắc sử dụng AI có trách nhiệm trong học tập, nghiên cứu và doanh nghiệp.'
+            ],
+            highlight: 'Quyết định quan trọng ảnh hưởng trực tiếp tới con người (tuyển dụng, điểm số, y tế, pháp lý) luôn cần sự giám sát và chịu trách nhiệm của con người.',
+            question: 'Nguyên tắc "Con người giám sát (Human-in-the-loop)" có ý nghĩa gì trong triển khai AI?'
+          },
+          {
+            num: 7,
+            toc: 'Thực hành Prompt chuẩn CNTT',
+            title: 'Thực hành viết prompt hiệu quả cho bài toán học tập & kỹ thuật',
+            content: [
+              'Chia nhỏ yêu cầu phức tạp thành từng bước: phân tích yêu cầu → thiết kế cấu trúc/thuật toán → viết đoạn mẫu → kiểm thử trường hợp biên.',
+              'Cung cấp đủ thông tin lỗi (error message, môi trường, đoạn mã liên quan) khi nhờ gỡ lỗi.',
+              'Luôn tự chạy thử, đọc hiểu từng dòng và kiểm tra tính an toàn/bản quyền của kết quả.'
+            ],
+            highlight: 'Một câu hỏi kèm thông báo lỗi cụ thể và nỗ lực thử nghiệm trước đó sẽ giúp bạn nhận được lời giải chính xác hơn nhiều so với câu hỏi mơ hồ.',
+            question: 'Khi nhờ AI hỗ trợ sửa lỗi code, bạn cần cung cấp những thông tin tối thiểu nào?'
+          },
+          {
+            num: 8,
+            toc: 'Tổng kết Bài 07',
+            title: 'Tổng kết: Kết hợp sức mạnh Dữ liệu, AI và tư duy nhân bản',
+            content: [
+              'AI là công cụ mạnh mẽ nhưng cần tư duy phản biện và kiểm chứng từ người dùng.',
+              'Prompt rõ cấu trúc giúp khai thác mô hình chính xác và tiết kiệm thời gian.',
+              'Dữ liệu chất lượng là nhiên liệu, còn chính sách lấy con người làm trung tâm giữ cho AI phát triển bền vững.'
+            ],
+            highlight: 'Hãy làm chủ AI bằng tư duy kỹ sư và trách nhiệm của người làm công nghệ.',
+            question: 'Nêu hai nguyên tắc bạn sẽ áp dụng ngay khi dùng AI hỗ trợ học tập và làm đồ án.'
+          }
+        ]
+      },
+      {
+        id: 'bai-08',
+        order: '08',
+        fileName: 'slide-08-infosec-digital-ethics.deck',
+        topicId: 'SECURITY_ETHICS',
+        topicLabel: 'ATTT & Đạo đức số',
+        accent: 'from-rose-500 via-fpt-orange to-fpt-blue',
+        title: 'An toàn thông tin & Đạo đức số',
+        summary: 'Làm chủ khái niệm ATTT & bộ ba CIA, tiêu chuẩn ISO/IEC 27000 & TCVN, hệ thống quản lý ISMS, đạo đức & trách nhiệm số, nhận diện deepfake/rủi ro mạng và các khung pháp lý tại Việt Nam (An ninh mạng, Dữ liệu cá nhân, Trí tuệ nhân tạo).',
+        slides: [
+          {
+            num: 1,
+            toc: 'ATTT & Bộ ba CIA',
+            title: 'An toàn thông tin (ATTT) và bộ ba trụ cột C – I – A',
+            content: [
+              '<strong>An toàn thông tin (Information Security)</strong> bảo vệ thông tin và hệ thống thông tin khỏi truy cập, sử dụng, tiết lộ, gián đoạn, sửa đổi hoặc phá hủy trái phép.',
+              '<strong>Confidentiality (Tính bảo mật):</strong> Chỉ người/thực thể được phép mới được tiếp cận thông tin.',
+              '<strong>Integrity (Tính toàn vẹn):</strong> Đảm bảo dữ liệu và hệ thống chính xác, đầy đủ, không bị sửa đổi trái phép.',
+              '<strong>Availability (Tính sẵn sàng):</strong> Đảm bảo thông tin và dịch vụ truy cập được kịp thời khi cần.'
+            ],
+            highlight: 'Rò rỉ mật khẩu làm mất Confidentiality; kẻ tấn công sửa sai số dư làm mất Integrity; tấn công làm sập hệ thống thi trực tuyến làm mất Availability.',
+            question: 'Một cuộc tấn công làm gián đoạn dịch vụ website khiến người dùng không thể truy cập chủ yếu ảnh hưởng tới trụ cột nào trong CIA?'
+          },
+          {
+            num: 2,
+            toc: 'ISO/IEC 27000 & TCVN',
+            title: 'Họ tiêu chuẩn ISO/IEC 27000 và hệ thống Tiêu chuẩn Quốc gia (TCVN)',
+            content: [
+              '<strong>Họ tiêu chuẩn ISO/IEC 27000</strong> cung cấp khung chuẩn quốc tế về quản lý an toàn thông tin (nổi bật là ISO/IEC 27001 về yêu cầu hệ thống quản lý ATTT và ISO/IEC 27002 về hướng dẫn biện pháp kiểm soát).',
+              'Tại Việt Nam, các <strong>TCVN</strong> tương đương giúp chuẩn hóa thuật ngữ, quy trình quản lý rủi ro và đánh giá an toàn thông tin phù hợp bối cảnh trong nước.'
+            ],
+            highlight: 'Áp dụng tiêu chuẩn giúp bảo mật không chỉ là vài phần mềm cài rời rạc mà trở thành quy trình có cấu trúc, đo lường và cải tiến được.',
+            question: 'Vì sao các tổ chức cần tiêu chuẩn như ISO/IEC 27000 / TCVN thay vì chỉ mua giải pháp bảo mật đơn lẻ?'
+          },
+          {
+            num: 3,
+            toc: 'Hệ thống quản lý ISMS',
+            title: 'Hệ thống quản lý An toàn thông tin (ISMS) và vòng lặp cải tiến',
+            content: [
+              '<strong>ISMS (Information Security Management System)</strong> là tập hợp chính sách, quy trình, con người và biện pháp kiểm soát nhằm quản lý rủi ro ATTT có hệ thống.',
+              'Vận hành theo tinh thần cải tiến liên tục (PDCA): đánh giá rủi ro tài sản thông tin, áp dụng biện pháp kiểm soát tương xứng, theo dõi, kiểm tra và cập nhật.'
+            ],
+            highlight: 'Mật khẩu mạnh hay xác thực hai yếu tố (2FA) chỉ phát huy tối đa khi đi cùng ý thức người dùng và quy trình quản lý tài khoản chặt chẽ.',
+            question: 'Trong ISMS, tại sao việc "đánh giá rủi ro" luôn phải đi trước khi chọn biện pháp bảo vệ?'
+          },
+          {
+            num: 4,
+            toc: 'Đạo đức số & Trách nhiệm số',
+            title: 'Đạo đức số (Digital Ethics) và Trách nhiệm số của công dân CNTT',
+            content: [
+              '<strong>Đạo đức số</strong> là hệ giá trị và chuẩn mực hướng dẫn hành vi đúng đắn trên môi trường số: trung thực, tôn trọng quyền riêng tư, sở hữu trí tuệ và không gây hại.',
+              '<strong>Trách nhiệm số</strong> thể hiện ở việc suy nghĩ về hậu quả xã hội của sản phẩm công nghệ và hành động trực tuyến của bản thân.'
+            ],
+            highlight: 'Khả năng kỹ thuật càng cao, trách nhiệm đạo đức càng lớn: biết cách tìm lỗ hổng không đồng nghĩa với quyền xâm nhập hay phát tán dữ liệu người khác.',
+            question: 'Hành vi quét/khai thác trái phép hệ thống không được cấp phép vi phạm nguyên tắc đạo đức và pháp luật nào?'
+          },
+          {
+            num: 5,
+            toc: 'Deepfake & Nhận diện rủi ro',
+            title: 'Deepfake, lừa đảo công nghệ cao và cách nhận diện rủi ro số',
+            content: [
+              '<strong>Deepfake</strong> sử dụng AI tạo hoặc biến đổi hình ảnh, âm thanh, video giả mạo chân thực, dễ bị lợi dụng trong lừa đảo, mạo danh hoặc tung tin giả.',
+              'Các hình thức rủi ro phổ biến khác: lừa đảo giả mạo (phishing), đường link/mã QR độc hại, cài cắm phần mềm gián điệp, rò rỉ dữ liệu cá nhân.',
+              'Cách phòng vệ: xác minh đa kênh độc lập, không vội làm theo yêu cầu chuyển tiền/mã OTP/thông tin nhạy cảm, bật 2FA, kiểm tra kỹ tên miền và nguồn tin.'
+            ],
+            highlight: 'Nếu nhận cuộc gọi video hoặc tin nhắn dùng hình ảnh/giọng nói quen thuộc nhưng yêu cầu gấp gáp về tiền bạc hay mã xác thực, hãy ngắt máy và gọi lại qua kênh xác thực độc lập.',
+            question: 'Nêu 3 dấu hiệu hoặc thói quen giúp bạn cảnh giác trước video/âm thanh deepfake và tin nhắn lừa đảo.'
+          },
+          {
+            num: 6,
+            toc: 'Luật An ninh mạng & Dữ liệu cá nhân',
+            title: 'Khung pháp lý tại Việt Nam: Luật An ninh mạng & Bảo vệ dữ liệu cá nhân',
+            content: [
+              '<strong>Luật An ninh mạng</strong> quy định trách nhiệm bảo vệ an ninh mạng, phòng chống hành vi xâm phạm an ninh mạng, bảo vệ hệ thống thông tin quan trọng và xử lý thông tin vi phạm pháp luật trên không gian mạng.',
+              '<strong>Luật Bảo vệ dữ liệu cá nhân</strong> xác lập nguyên tắc thu thập, xử lý, lưu trữ, chuyển giao dữ liệu cá nhân hợp pháp, minh bạch, đúng mục đích và bảo vệ quyền chủ thể dữ liệu (đặc biệt dữ liệu cá nhân nhạy cảm).'
+            ],
+            highlight: 'Khi làm đồ án hoặc ứng dụng có thu thập họ tên, email, số điện thoại, hình ảnh của người dùng, sinh viên phải tôn trọng nguyên tắc bảo vệ dữ liệu cá nhân ngay từ khâu thiết kế.',
+            question: 'Khi xây dựng ứng dụng có thu thập thông tin cá nhân của người dùng, bạn cần lưu ý nguyên tắc gì về dữ liệu?'
+          },
+          {
+            num: 7,
+            toc: 'Luật Trí tuệ nhân tạo & Tuân thủ',
+            title: 'Định hướng pháp lý về Trí tuệ nhân tạo tại Việt Nam & Tuân thủ số',
+            content: [
+              'Khung pháp luật liên quan đến <strong>Trí tuệ nhân tạo</strong> tại Việt Nam hướng tới thúc đẩy đổi mới sáng tạo gắn với quản trị rủi ro, minh bạch, an toàn, bảo vệ dữ liệu và trách nhiệm giải trình.',
+              'Người phát triển và sử dụng AI cần tránh đưa bí mật, dữ liệu cá nhân nhạy cảm vào mô hình công cộng trái phép, gắn nhãn/minh bạch khi cần và chịu trách nhiệm với sản phẩm tạo ra.'
+            ],
+            highlight: 'Cập nhật quy định pháp luật về An ninh mạng, Bảo vệ dữ liệu cá nhân và Trí tuệ nhân tạo giúp bạn làm nghề đúng luật và an toàn.',
+            question: 'Vì sao không nên dán thông tin cá nhân nhạy cảm hoặc dữ liệu nội bộ của tổ chức vào công cụ AI công cộng?'
+          },
+          {
+            num: 8,
+            toc: 'Tổng kết Bài 08 & Hành trình BeeLib',
+            title: 'Tổng kết: An toàn thông tin & Đạo đức số — Nền móng bền vững của người làm CNTT',
+            content: [
+              'Bảo mật, Toàn vẹn và Sẵn sàng (CIA) cùng tiêu chuẩn ISO/IEC 27000 / TCVN / ISMS là trụ cột bảo vệ hệ thống số.',
+              'Đạo đức số, cảnh giác trước deepfake/rủi ro và tuân thủ pháp luật (An ninh mạng, Bảo vệ dữ liệu cá nhân, Trí tuệ nhân tạo) bảo vệ chính bạn và cộng đồng.',
+              'Hoàn thành 8 bài học là bước khởi đầu vững chắc cho hành trình CNTT tại FPT Polytechnic.'
+            ],
+            highlight: 'Giỏi công nghệ + Vững đạo đức & Tuân thủ pháp luật = Giá trị bền vững của một người làm CNTT chuyên nghiệp.',
+            question: 'Cam kết cá nhân của bạn về an toàn thông tin và đạo đức số trong học tập và dự án sắp tới là gì?'
+          }
+        ]
+      }
+    ];
+
+    // =======================================================================
+    // STATE MANAGEMENT
+    // =======================================================================
+    let state = {
+      theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'dark',
+      visitedSlides: JSON.parse(localStorage.getItem(STORAGE_KEYS.VISITED) || '[]'),
+      personalNotes: JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '{}'),
+      activeTopic: 'ALL',
+      searchQuery: '',
+      currentLessonId: null,
+      currentSlideIndex: 0,
+    };
+
+    // =======================================================================
+    // THEME HANDLING (Dark / Light mode with localStorage)
+    // =======================================================================
+    function applyTheme(theme) {
+      state.theme = theme;
+      const htmlEl = document.documentElement;
+      if (theme === 'dark') {
+        htmlEl.classList.add('dark');
+      } else {
+        htmlEl.classList.remove('dark');
+      }
+      try {
+        localStorage.setItem(STORAGE_KEYS.THEME, theme);
+      } catch (e) {
+        // Ignore storage quota errors safely
+      }
+    }
+
+    function toggleTheme() {
+      applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+    }
+
+    // =======================================================================
+    // TOAST NOTIFICATION HELPER
+    // =======================================================================
+    let toastTimeout = null;
+    function showToast(message) {
+      const banner = document.getElementById('toast-banner');
+      const msgEl = document.getElementById('toast-message');
+      msgEl.textContent = message;
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }, 3000);
+    }
+
+    // =======================================================================
+    // PARTICLE NETWORK BACKGROUND (Canvas with resize & theme awareness)
+    // =======================================================================
+    function initParticleNetwork() {
+      const canvas = document.getElementById('particle-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+
+      const particleCount = Math.min(68, Math.max(28, Math.floor((width * height) / 24000)));
+      const particles = [];
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.45,
+          vy: (Math.random() - 0.5) * 0.45,
+          r: Math.random() * 2 + 1.1,
+          colorType: i % 3, // 0: orange, 1: blue, 2: teal
+        });
+      }
+
+      function handleResize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }
+
+      window.addEventListener('resize', handleResize);
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        const isDark = document.documentElement.classList.contains('dark');
+        const maxDist = 135;
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+
+          // Draw connections
+          for (let j = i + 1; j < particles.length; j++) {
+            const q = particles[j];
+            const dx = p.x - q.x;
+            const dy = p.y - q.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < maxDist) {
+              const alpha = (1 - dist / maxDist) * (isDark ? 0.18 : 0.14);
+              ctx.strokeStyle = isDark
+                ? `rgba(56, 189, 248, ${alpha.toFixed(3)})`
+                : `rgba(0, 102, 179, ${alpha.toFixed(3)})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+              ctx.stroke();
+            }
+          }
+
+          // Draw node dot
+          if (p.colorType === 0) {
+            ctx.fillStyle = isDark ? 'rgba(242, 101, 34, 0.55)' : 'rgba(242, 101, 34, 0.45)';
+          } else if (p.colorType === 1) {
+            ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.5)' : 'rgba(0, 102, 179, 0.4)';
+          } else {
+            ctx.fillStyle = isDark ? 'rgba(40, 199, 183, 0.5)' : 'rgba(0, 168, 150, 0.42)';
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+    }
+
+    // =======================================================================
+    // PROGRESS & STATS RENDERING
+    // =======================================================================
+    function updateProgressUI() {
+      const totalSlides = LESSONS_DATA.length * 8; // 64
+      const uniqueVisited = new Set(state.visitedSlides);
+      const count = uniqueVisited.size;
+      const pct = Math.round((count / totalSlides) * 100);
+
+      const globalText = document.getElementById('global-progress-text');
+      const heroLabel = document.getElementById('hero-progress-label');
+      const heroPercent = document.getElementById('hero-progress-percent');
+
+      if (globalText) globalText.textContent = `${count}/${totalSlides} slide`;
+      if (heroLabel) heroLabel.textContent = `${count} / ${totalSlides} slide hoàn tất`;
+      if (heroPercent) heroPercent.textContent = `${pct}%`;
+    }
+
+    function markSlideVisited(lessonId, slideNum) {
+      const key = `${lessonId}-s${slideNum}`;
+      if (!state.visitedSlides.includes(key)) {
+        state.visitedSlides.push(key);
+        try {
+          localStorage.setItem(STORAGE_KEYS.VISITED, JSON.stringify(state.visitedSlides));
+        } catch (e) {
+          // Ignore storage issues
+        }
+        updateProgressUI();
+      }
+    }
+
+    function getLessonVisitedCount(lessonId) {
+      return state.visitedSlides.filter((k) => k.startsWith(`${lessonId}-s`)).length;
+    }
+
+    // =======================================================================
+    // HEADER PILLS, TOPIC FILTER & OVERVIEW TOC
+    // =======================================================================
+    function renderHeaderPills() {
+      const container = document.getElementById('header-deck-pills');
+      if (!container) return;
+      container.innerHTML = LESSONS_DATA.map(
+        (lesson) => `
+          <button
+            type="button"
+            onclick="openSlideModal('${lesson.id}', 0)"
+            title="${escapeHtml(lesson.fileName)} — ${escapeHtml(lesson.title)}"
+            class="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 hover:bg-fpt-orange/15 hover:text-fpt-orange transition"
+          >
+            B${lesson.order}
+          </button>
+        `
+      ).join('');
+    }
+
+    function renderTopicFilterBar() {
+      const bar = document.getElementById('topic-filter-bar');
+      if (!bar) return;
+
+      bar.innerHTML = TOPICS.map((t) => {
+        const active = state.activeTopic === t.id;
+        return `
+          <button
+            type="button"
+            onclick="selectTopic('${t.id}')"
+            class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition active:scale-95 ${
+              active
+                ? 'bg-gradient-to-r from-fpt-orange to-fpt-orangeLight text-white shadow-sm shadow-fpt-orange/25'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/70 dark:border-slate-700/70'
+            }"
+          >
+            ${escapeHtml(t.label)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectTopic(topicId) {
+      state.activeTopic = topicId;
+      renderTopicFilterBar();
+      renderLessonsGrid();
+    }
+
+    function handleSearchOrFilter() {
+      const input = document.getElementById('search-input');
+      const clearBtn = document.getElementById('clear-search-btn');
+      state.searchQuery = (input.value || '').trim().toLowerCase();
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', state.searchQuery.length === 0);
+      }
+      renderLessonsGrid();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      if (input) input.value = '';
+      state.searchQuery = '';
+      document.getElementById('clear-search-btn')?.classList.add('hidden');
+      renderLessonsGrid();
+    }
+
+    function resetFilters() {
+      state.activeTopic = 'ALL';
+      clearSearch();
+      renderTopicFilterBar();
+      renderLessonsGrid();
+    }
+
+    function renderOverviewToc() {
+      const grid = document.getElementById('overview-toc-grid');
+      if (!grid) return;
+
+      grid.innerHTML = LESSONS_DATA.map(
+        (lesson) => `
+          <div class="group p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/65 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 hover:border-fpt-orange/50 transition flex flex-col justify-between gap-2">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <a
+                  href="#card-${lesson.id}"
+                  class="font-mono text-[11px] font-bold text-fpt-orange hover:underline truncate"
+                >
+                  ${escapeHtml(lesson.fileName)}
+                </a>
+                <button
+                  type="button"
+                  onclick="openSlideModal('${lesson.id}', 0)"
+                  class="text-[11px] font-semibold text-fpt-blue dark:text-fpt-tealLight hover:underline shrink-0"
+                >
+                  Mở slide →
+                </button>
+              </div>
+              <a
+                href="#card-${lesson.id}"
+                class="block text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-fpt-orange transition mt-1 line-clamp-1"
+              >
+                Bài ${lesson.order}: ${escapeHtml(lesson.title)}
+              </a>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              ${lesson.slides
+                .slice(0, 4)
+                .map(
+                  (s, idx) => `
+                    <button
+                      type="button"
+                      onclick="openSlideModal('${lesson.id}', ${idx})"
+                      class="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/80 hover:bg-fpt-orange/20 hover:text-fpt-orange text-[10px] text-slate-600 dark:text-slate-300 transition truncate max-w-[130px]"
+                      title="Nhảy tới Slide ${s.num}: ${escapeHtml(s.toc)}"
+                    >
+                      S${s.num}. ${escapeHtml(s.toc)}
+                    </button>
+                  `
+                )
+                .join('')}
+              <button
+                type="button"
+                onclick="openSlideModal('${lesson.id}', 4)"
+                class="px-1.5 py-0.5 rounded bg-fpt-teal/15 text-fpt-teal text-[10px] font-semibold hover:bg-fpt-teal/25 transition"
+                title="Xem thêm Slide 5 – Slide 8"
+              >
+                +4 slide
+              </button>
+            </div>
+          </div>
+        `
+      ).join('');
+    }
+
+    // =======================================================================
+    // MAIN LESSONS GRID RENDERING (8 Files / Cards)
+    // =======================================================================
+    function lessonMatchesFilter(lesson) {
+      if (state.activeTopic !== 'ALL' && lesson.topicId !== state.activeTopic) {
+        return false;
+      }
+      if (!state.searchQuery) return true;
+
+      const q = state.searchQuery;
+      const inMeta =
+        lesson.title.toLowerCase().includes(q) ||
+        lesson.fileName.toLowerCase().includes(q) ||
+        lesson.summary.toLowerCase().includes(q) ||
+        lesson.topicLabel.toLowerCase().includes(q);
+
+      const inSlides = lesson.slides.some(
+        (s) =>
+          s.toc.toLowerCase().includes(q) ||
+          s.title.toLowerCase().includes(q) ||
+          s.content.some((c) => c.toLowerCase().includes(q)) ||
+          s.highlight.toLowerCase().includes(q)
+      );
+
+      return inMeta || inSlides;
+    }
+
+    function renderLessonsGrid() {
+      const grid = document.getElementById('lessons-grid');
+      const emptyEl = document.getElementById('empty-state');
+      if (!grid) return;
+
+      const filtered = LESSONS_DATA.filter(lessonMatchesFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+
+      grid.innerHTML = filtered
+        .map((lesson) => {
+          const visitedCount = getLessonVisitedCount(lesson.id);
+          const pct = Math.round((visitedCount / 8) * 100);
+
+          return `
+            <article
+              id="card-${lesson.id}"
+              class="glass-card hover-lift rounded-3xl bg-white/80 dark:bg-slate-900/75 border border-slate-200/80 dark:border-slate-800/80 hover:border-fpt-orange/50 shadow-lg shadow-slate-900/5 dark:shadow-black/25 p-5 sm:p-6 flex flex-col justify-between gap-5"
+            >
+              <div>
+                <!-- Card Top Bar: File badge + Topic + Lesson Order -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-xs font-semibold text-fpt-orange">
+                    <span>📄</span>
+                    <span>${escapeHtml(lesson.fileName)}</span>
+                  </span>
+
+                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-fpt-blue/10 text-fpt-blue dark:bg-fpt-teal/15 dark:text-fpt-tealLight">
+                    Bài ${lesson.order} • ${escapeHtml(lesson.topicLabel)}
+                  </span>
+                </div>
+
+                <!-- Lesson Title -->
+                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-snug mb-2">
+                  ${escapeHtml(lesson.title)}
+                </h3>
+
+                <!-- Summary -->
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                  ${escapeHtml(lesson.summary)}
+                </p>
+
+                <!-- 8-Slide Quick Jump Table of Contents inside Card -->
+                <div class="rounded-2xl p-3.5 bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70">
+                  <div class="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
+                    <span>Mục lục 8 slide trong file:</span>
+                    <span class="font-mono text-fpt-teal">${visitedCount}/8 đã xem</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    ${lesson.slides
+                      .map((s, idx) => {
+                        const isVisited = state.visitedSlides.includes(`${lesson.id}-s${s.num}`);
+                        return `
+                          <button
+                            type="button"
+                            onclick="openSlideModal('${lesson.id}', ${idx})"
+                            class="text-left px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-2 bg-white dark:bg-slate-900/80 hover:bg-fpt-orange/10 dark:hover:bg-fpt-orange/20 border border-slate-200/60 dark:border-slate-700/60 hover:border-fpt-orange/40 transition group"
+                          >
+                            <span class="font-mono font-bold text-[11px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-fpt-blue dark:text-fpt-blueLight group-hover:bg-fpt-orange group-hover:text-white transition shrink-0">
+                              0${s.num}
+                            </span>
+                            <span class="truncate text-slate-700 dark:text-slate-200 group-hover:text-fpt-orange font-medium flex-1">
+                              ${escapeHtml(s.toc)}
+                            </span>
+                            ${isVisited ? '<span class="text-emerald-500 text-[11px] shrink-0">✓</span>' : ''}
+                          </button>
+                        `;
+                      })
+                      .join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Footer: Progress Bar + Primary CTA + Export Markdown -->
+              <div class="space-y-3 pt-1">
+                <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r ${lesson.accent} transition-all duration-500"
+                    style="width: ${pct}%"
+                  ></div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onclick="openSlideModal('${lesson.id}', 0)"
+                    class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-fpt-orange to-fpt-orangeLight hover:from-fpt-orangeDark hover:to-fpt-orange text-white text-xs sm:text-sm font-bold shadow-md shadow-fpt-orange/25 transition active:scale-[0.99] flex items-center justify-center gap-2"
+                  >
+                    <span>Mở trình xem Slide (1–8)</span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onclick="exportDeckMarkdownById('${lesson.id}')"
+                    class="py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-fpt-teal/15 dark:bg-slate-800 dark:hover:bg-fpt-teal/20 text-slate-700 dark:text-slate-200 hover:text-fpt-teal border border-slate-200 dark:border-slate-700 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5"
+                    title="Xuất ghi chú tóm tắt .md của ${escapeHtml(lesson.fileName)}"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>.MD</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          `;
+        })
+        .join('');
+    }
+
+    // =======================================================================
+    // SLIDE VIEWER MODAL LOGIC (Keyboard Left/Right/Esc + TOC + Notes)
+    // =======================================================================
+    function openSlideModal(lessonId, slideIndex = 0) {
+      const lesson = LESSONS_DATA.find((l) => l.id === lessonId);
+      if (!lesson) return;
+
+      state.currentLessonId = lessonId;
+      state.currentSlideIndex = Math.max(0, Math.min(7, slideIndex));
+
+      document.getElementById('modal-deck-badge').textContent = lesson.fileName;
+      document.getElementById('modal-topic-badge').textContent = `Bài ${lesson.order} • ${lesson.topicLabel}`;
+      document.getElementById('modal-lesson-title').textContent = lesson.title;
+
+      // Ensure mobile TOC starts hidden on open
+      const sidebar = document.getElementById('modal-toc-sidebar');
+      sidebar.classList.add('hidden');
+      sidebar.classList.remove('fixed', 'inset-y-16', 'left-0', 'z-40', 'w-72', 'shadow-2xl');
+
+      const modal = document.getElementById('slide-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+
+      renderSlideViewer();
+    }
+
+    function closeSlideModal() {
+      const modal = document.getElementById('slide-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+      state.currentLessonId = null;
+      renderLessonsGrid();
+    }
+
+    function toggleMobileToc() {
+      const sidebar = document.getElementById('modal-toc-sidebar');
+      const isHidden = sidebar.classList.contains('hidden');
+      if (isHidden) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('fixed', 'inset-y-16', 'left-0', 'z-40', 'w-72', 'shadow-2xl', 'flex');
+      } else {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('fixed', 'inset-y-16', 'left-0', 'z-40', 'w-72', 'shadow-2xl');
+      }
+    }
+
+    function renderSlideViewer() {
+      const lesson = LESSONS_DATA.find((l) => l.id === state.currentLessonId);
+      if (!lesson) return;
+
+      const idx = state.currentSlideIndex;
+      const slide = lesson.slides[idx];
+
+      // Mark current slide as visited
+      markSlideVisited(lesson.id, slide.num);
+
+      // Update TOC sidebar list
+      const tocList = document.getElementById('modal-toc-list');
+      const visitedInLesson = getLessonVisitedCount(lesson.id);
+      document.getElementById('modal-toc-progress').textContent = `${visitedInLesson}/8`;
+
+      tocList.innerHTML = lesson.slides
+        .map((s, sIdx) => {
+          const active = sIdx === idx;
+          const isVisited = state.visitedSlides.includes(`${lesson.id}-s${s.num}`);
+          return `
+            <button
+              type="button"
+              onclick="jumpToSlide(${sIdx})"
+              class="w-full text-left px-3 py-2.5 rounded-xl text-xs transition flex items-start gap-2.5 ${
+                active
+                  ? 'bg-gradient-to-r from-fpt-orange to-fpt-orangeLight text-white font-bold shadow-sm'
+                  : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+              }"
+            >
+              <span class="font-mono text-[11px] px-1.5 py-0.5 rounded ${
+                active ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              } shrink-0 mt-0.5">
+                0${s.num}
+              </span>
+              <span class="flex-1 leading-snug">${escapeHtml(s.toc)}</span>
+              ${
+                isVisited
+                  ? `<span class="${active ? 'text-white' : 'text-emerald-500'} text-xs shrink-0">✓</span>`
+                  : ''
+              }
+            </button>
+          `;
+        })
+        .join('');
+
+      // Trigger smooth slide animation
+      const stage = document.getElementById('slide-stage');
+      stage.classList.remove('slide-enter');
+      void stage.offsetWidth; // Reflow trick to replay CSS animation
+      stage.classList.add('slide-enter');
+
+      // Populate slide fields
+      document.getElementById('slide-number-pill').textContent = `Slide 0${slide.num} / 08`;
+      document.getElementById('slide-toc-tag').textContent = `Mục: ${slide.toc}`;
+      document.getElementById('slide-visited-badge').classList.remove('hidden');
+      document.getElementById('slide-title').textContent = slide.title;
+
+      document.getElementById('slide-content').innerHTML = slide.content
+        .map((para) => `<p class="leading-relaxed">${para}</p>`)
+        .join('');
+
+      document.getElementById('slide-highlight').textContent = slide.highlight;
+      document.getElementById('slide-question').textContent = slide.question;
+
+      // Load personal note for this specific slide
+      const noteKey = `${lesson.id}-s${slide.num}`;
+      const noteTextarea = document.getElementById('slide-personal-note');
+      noteTextarea.value = state.personalNotes[noteKey] || '';
+
+      // Prev / Next buttons state
+      document.getElementById('prev-slide-btn').disabled = idx === 0;
+      document.getElementById('next-slide-btn').disabled = idx === lesson.slides.length - 1;
+
+      // Render mini dot stepper
+      const dotsEl = document.getElementById('slide-dots');
+      dotsEl.innerHTML = lesson.slides
+        .map(
+          (_, dIdx) => `
+            <button
+              type="button"
+              onclick="jumpToSlide(${dIdx})"
+              aria-label="Chuyển tới Slide ${dIdx + 1}"
+              class="h-2.5 rounded-full transition-all ${
+                dIdx === idx
+                  ? 'w-7 bg-fpt-orange'
+                  : 'w-2.5 bg-slate-300 dark:bg-slate-700 hover:bg-fpt-blue'
+              }"
+            ></button>
+          `
+        )
+        .join('');
+    }
+
+    function jumpToSlide(slideIdx) {
+      state.currentSlideIndex = Math.max(0, Math.min(7, slideIdx));
+      renderSlideViewer();
+
+      // Close mobile drawer automatically after selecting a slide
+      const sidebar = document.getElementById('modal-toc-sidebar');
+      if (window.innerWidth < 1024 && !sidebar.classList.contains('hidden')) {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('fixed', 'inset-y-16', 'left-0', 'z-40', 'w-72', 'shadow-2xl');
+      }
+    }
+
+    function prevSlide() {
+      if (state.currentSlideIndex > 0) {
+        state.currentSlideIndex -= 1;
+        renderSlideViewer();
+      }
+    }
+
+    function nextSlide() {
+      if (state.currentSlideIndex < 7) {
+        state.currentSlideIndex += 1;
+        renderSlideViewer();
+      }
+    }
+
+    function savePersonalNote() {
+      if (!state.currentLessonId) return;
+      const lesson = LESSONS_DATA.find((l) => l.id === state.currentLessonId);
+      if (!lesson) return;
+      const slide = lesson.slides[state.currentSlideIndex];
+      const noteKey = `${lesson.id}-s${slide.num}`;
+      const val = document.getElementById('slide-personal-note').value;
+
+      state.personalNotes[noteKey] = val;
+      try {
+        localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(state.personalNotes));
+      } catch (e) {
+        // Ignore storage errors
+      }
+
+      const indicator = document.getElementById('note-saved-indicator');
+      indicator.classList.remove('opacity-0');
+      indicator.classList.add('opacity-100');
+      setTimeout(() => {
+        indicator.classList.remove('opacity-100');
+        indicator.classList.add('opacity-0');
+      }, 1200);
+    }
+
+    // Keyboard navigation: Left / Right arrows & Escape
+    document.addEventListener('keydown', (event) => {
+      const modal = document.getElementById('slide-modal');
+      const isModalOpen = modal && !modal.classList.contains('hidden');
+      if (!isModalOpen) return;
+
+      // Do not hijack arrow keys while typing inside personal note textarea
+      const activeTag = document.activeElement ? document.activeElement.tagName : '';
+      if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') {
+        if (event.key === 'Escape') {
+          document.activeElement.blur();
+        }
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevSlide();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nextSlide();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSlideModal();
+      }
+    });
+
+    // Close modal when clicking backdrop
+    document.getElementById('slide-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'slide-modal') {
+        closeSlideModal();
+      }
+    });
+
+    // =======================================================================
+    // EXPORT SUMMARY MARKDOWN (.md) FOR EACH LESSON FILE
+    // =======================================================================
+    function stripHtmlTags(str) {
+      return String(str || '').replace(/<[^>]*>/g, '');
+    }
+
+    function buildLessonMarkdown(lesson) {
+      const lines = [];
+      lines.push(`# ${lesson.title}`);
+      lines.push('');
+      lines.push(`- **Thư viện:** FPT BeeLib — Thư viện số CNTT Năm Nhất (FPT Polytechnic)`);
+      lines.push(`- **File tài liệu:** \`${lesson.fileName}\``);
+      lines.push(`- **Chủ đề:** ${lesson.topicLabel}`);
+      lines.push(`- **Tóm tắt:** ${lesson.summary}`);
+      lines.push('');
+      lines.push('## Mục lục 8 Slide');
+      lesson.slides.forEach((s) => {
+        lines.push(`${s.num}. [Slide 0${s.num}] ${s.toc} — *${s.title}*`);
+      });
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+
+      lesson.slides.forEach((s) => {
+        const noteKey = `${lesson.id}-s${s.num}`;
+        const userNote = (state.personalNotes[noteKey] || '').trim();
+
+        lines.push(`## Slide 0${s.num}: ${s.title}`);
+        lines.push(`- **Mục lục:** ${s.toc}`);
+        lines.push('');
+        s.content.forEach((p) => {
+          lines.push(`- ${stripHtmlTags(p)}`);
+        });
+        lines.push('');
+        lines.push(`> **Điểm nhấn FPT CNTT:** ${stripHtmlTags(s.highlight)}`);
+        lines.push('');
+        lines.push(`- **Câu hỏi ôn tập:** ${stripHtmlTags(s.question)}`);
+        if (userNote) {
+          lines.push(`- **Ghi chú cá nhân:** ${userNote}`);
+        }
+        lines.push('');
+      });
+
+      return lines.join('\n');
+    }
+
+    function exportDeckMarkdownById(lessonId) {
+      const lesson = LESSONS_DATA.find((l) => l.id === lessonId);
+      if (!lesson) return;
+
+      const mdContent = buildLessonMarkdown(lesson);
+      const mdFileName = lesson.fileName.replace(/\.deck$/i, '') + '-ghi-chu.md';
+
+      try {
+        const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = mdFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast(`Đã tải xuống ${mdFileName}`);
+      } catch (err) {
+        // Fallback: copy to clipboard via execCommand
+        copyMarkdownFallback(mdContent, mdFileName);
+      }
+    }
+
+    function exportCurrentDeckMarkdown() {
+      if (!state.currentLessonId) return;
+      exportDeckMarkdownById(state.currentLessonId);
+    }
+
+    function copyMarkdownFallback(text, fileName) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(`Đã sao chép nội dung ${fileName} vào bộ nhớ tạm!`);
+      } catch (e) {
+        showToast('Không thể xuất tệp tự động trên trình duyệt này.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // =======================================================================
+    // UTILITIES
+    // =======================================================================
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function scrollToTopAndReset() {
+      resetFilters();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =======================================================================
+    // INITIALIZATION
+    // =======================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTheme(state.theme);
+      initParticleNetwork();
+      renderHeaderPills();
+      renderTopicFilterBar();
+      renderOverviewToc();
+      renderLessonsGrid();
+      updateProgressUI();
+    });
+  </script>
+</body>
+</html>
